@@ -110,10 +110,10 @@ OPENAI_API_KEY=
 PLACES_API_KEY=
 DISTANCE_API_KEY=
 SUPABASE_URL=
-SUPABASE_KEY=
+SUPABASE_SECRET_KEY=
 ```
 
-Keep the real `.env` file in `.gitignore`. Never push API keys to GitHub.
+Keep the real `.env` file in `.gitignore`. Never push API keys to GitHub, and never expose `SUPABASE_SECRET_KEY` in frontend code.
 
 ## GitHub workflow
 
