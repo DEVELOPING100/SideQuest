@@ -1,0 +1,61 @@
+{
+  "generateAdventureResponse": {
+    "adventureId": "adv_123",
+    "totalEstimatedMinutes": 85,
+    "stops": [
+      {
+        "stopId": "s1",
+        "name": "Riverfront Trail",
+        "category": "nature",
+        "estimatedMinutes": 25,
+        "lat": 45.9640,
+        "lng": -66.6440,
+        "order": 1
+      },
+      {
+        "stopId": "s2",
+        "name": "Local Café",
+        "category": "food",
+        "estimatedMinutes": 20,
+        "lat": 45.9650,
+        "lng": -66.6420,
+        "order": 2
+      },
+      {
+        "stopId": "s3",
+        "name": "Hidden Mural Wall",
+        "category": "art",
+        "estimatedMinutes": 15,
+        "lat": 45.9655,
+        "lng": -66.6410,
+        "order": 3
+      }
+    ]
+  },
+  "checkinResponse": {
+    "success": true,
+    "stopId": "s1",
+    "completedAt": "2026-09-26T14:32:00Z"
+  },
+  "adventureDetailResponse": {
+    "adventureId": "adv_123",
+    "totalEstimatedMinutes": 85,
+    "stops": [
+      { "stopId": "s1", "name": "Riverfront Trail", "category": "nature", "estimatedMinutes": 25, "lat": 45.9640, "lng": -66.6440, "order": 1, "completed": true },
+      { "stopId": "s2", "name": "Local Café", "category": "food", "estimatedMinutes": 20, "lat": 45.9650, "lng": -66.6420, "order": 2, "completed": false },
+      { "stopId": "s3", "name": "Hidden Mural Wall", "category": "art", "estimatedMinutes": 15, "lat": 45.9655, "lng": -66.6410, "order": 3, "completed": false }
+    ]
+  },
+  "passportResponse": {
+    "userId": "u1",
+    "stamps": [
+      {
+        "stampId": "st1",
+        "adventureId": "adv_123",
+        "title": "Fredericton Explorer",
+        "earnedAt": "2026-09-26T15:00:00Z",
+        "stopCount": 3
+      }
+    ]
+  }
+}
