@@ -8,8 +8,8 @@ npm install
 ```
 
 ## Owners
-- Person 1: input screen + generated-adventure display (`src/screens/InputScreen`, `src/screens/AdventureScreen`)
-- Person 2: check-in flow + passport gallery (`src/screens/CheckinFlow`, `src/screens/PassportGallery`)
+- Aljaberi: input screen + generated-adventure display (`src/screens/InputScreen`, `src/screens/AdventureScreen`)
+- Sotonte: check-in flow + passport gallery (`src/screens/CheckinFlow`, `src/screens/PassportGallery`)
 
 ## Build against mock data first — don't wait on the backend
 Copy `../docs/mock-data.json` into `src/mockApi.js` like this, and call these functions from your
