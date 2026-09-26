@@ -7,8 +7,8 @@
 ```
 
 ## Owners
-- Person 3: adventure-generation logic + Places API integration
-- Person 4: database schema + distance/walk-time API integration
+- David: adventure-generation logic + Places API integration
+- Parfait: database schema + distance/walk-time API integration
 
 ## Endpoint checklist (must match docs/api-contract.md exactly)
 - [ ] `POST /api/adventures/generate`
