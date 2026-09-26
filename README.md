@@ -1,116 +1,97 @@
-<div align="center">
+# SideQuest
 
-# 🧭 SideQuest
+Turn your free time into a short local adventure — and collect a passport stamp for finishing it.
 
-### Spend less time searching. More time experiencing.
+SideQuest generates a personalized adventure based on your location, budget, available time, group, vibe, and travel method — using real local places.
 
-SideQuest turns a few preferences into a personalized, real-world adventure through local places.
+## The problem
 
-![Hackathon](https://img.shields.io/badge/hackathon-24%20hours-7C3AED)
-![Status](https://img.shields.io/badge/status-in%20development-F59E0B)
-![Location](https://img.shields.io/badge/launching%20in-Fredericton%2C%20NB-0EA5E9)
+People often feel that there is not much to do nearby. The experiences exist, but finding activities that fit a budget and schedule — and turning them into a complete outing — takes time and effort.
 
-</div>
+SideQuest does that research for the user. The goal is simple: spend less time searching and more time experiencing.
 
----
+## Demo target
 
-## Why SideQuest?
+- Preferences — enter a location, budget, available time, group, vibe, and travel mode
+- AI-generated adventure — create an itinerary with 2–4 real stops
+- Route — display the stops on a map with travel time between them
+- Check-in — use GPS check-in, with a simulated check-in as a fallback
+- Passport stamp — earn a digital stamp after completing the adventure
+- Passport gallery — save and display completed adventures and past stamps
 
-People often say there is not much to do nearby. In reality, finding activities that fit a budget, schedule, group, mood, and travel method is the hard part.
+The minimum viable demo is:
 
-SideQuest handles that research. It finds real local places, builds them into one practical itinerary, guides the user through each stop, and saves the finished adventure as a digital passport stamp.
-
-> **MVP:** Preferences → Real places → AI itinerary → Route → Check-in → Stamp → Saved passport
-
-## The experience
-
-| Step | What happens |
-| --- | --- |
-| **1. Personalize** | Choose a location, budget, available time, group, vibe, and travel mode. |
-| **2. Generate** | SideQuest creates a 2-4 stop adventure using real local places. |
-| **3. Explore** | Follow the mapped route and check in at each destination. |
-| **4. Collect** | Complete the adventure and add a new stamp to the Adventure Passport. |
-
-### Core features
-
-- Personalized adventures built around six user preferences
-- Real destinations supplied by a Places API
-- Route maps and travel-time estimates
-- GPS check-in with a reliable demo fallback
-- Progress tracking for completed and remaining stops
-- Collectible stamps and a saved Adventure Passport
-
-## How it works
-
-```mermaid
-flowchart LR
-    User["Traveler"] --> Web["Next.js frontend"]
-    Web --> API["Spring Boot API"]
-    API --> Places["Places API"]
-    API --> AI["OpenAI API"]
-    API --> Route["Routing API"]
-    API <--> DB["Supabase"]
-    Places --> API
-    AI --> API
-    Route --> API
-    API --> Web
+```
+Preferences → AI adventure → Real stops → Check-in → Stamp → Saved passport
 ```
 
-The backend retrieves suitable places, combines them with the user's preferences, and uses AI to assemble a coherent adventure. Supabase stores adventures, stops, completion progress, and earned stamps.
+## Team & Roles
+
+- Azeez — Frontend: preference input, generated adventure, stop list, map, and backend connection
+- Sotonte — Frontend: check-in flow, digital stamp, Adventure Passport, and completion states
+- David — Backend: Spring Boot API, Places API, OpenAI integration, and adventure generation
+- Parfait — Backend: Supabase, saved adventures and stamps, distance API, and final integration
 
 ## Tech stack
 
-| Layer | Technology |
-| --- | --- |
-| Web app | React, Next.js |
-| API | Java, Spring Boot |
-| AI | OpenAI API |
-| Data | Supabase, PostgreSQL |
-| Places | Google Places API or OpenTripMap |
-| Maps | Mapbox or Google Maps |
-| Routing | OpenRouteService or Google Distance Matrix |
-| Deployment | Vercel |
+- Frontend: React / Next.js
+- Backend: Spring Boot (Java)
+- AI: OpenAI API
+- Database: Supabase (PostgreSQL)
+- Places data: Google Places API or OpenTripMap
+- Map: Mapbox or Google Maps
+- Distance and routing: OpenRouteService or Google Distance Matrix
+- Deployment: Vercel
+- Design and collaboration: Figma and GitHub
 
-## Quick start
+## How this repo is organized
+
+```
+sidequest/
+  frontend/           # Next.js / React app — see frontend/README.md
+  backend/            # Spring Boot API — see backend/README.md
+  docs/
+    api-contract.md   # shared request and response contract — read this first
+    mock-data.json    # sample responses frontend can build against immediately
+  README.md           # project information and setup instructions
+```
+
+## Getting started
+
+1. Clone the repo and work on your assigned feature branch.
+2. Read `docs/api-contract.md` before writing code — it lets frontend and backend build in parallel.
+3. Frontend developers should begin with `docs/mock-data.json` instead of waiting for the backend.
+4. Backend developers should build endpoints that match the API contract exactly.
+5. Integrate at the planned checkpoints by replacing mock data with real API calls.
+
+## Running the project
 
 ### Prerequisites
 
 - Node.js and npm
-- Java 17+
+- Java 17 or newer
 - A Supabase project
-- Credentials for the selected AI, places, maps, and routing services
+- Credentials for the selected external services
 
-### 1. Clone the project
+### Clone the repository
 
 ```bash
 git clone https://github.com/DEVELOPING100/SideQuest.git
 cd SideQuest
 ```
 
-### 2. Add local environment variables
-
-Create a `.env` file. Never commit real credentials.
-
-```dotenv
-OPENAI_API_KEY=
-PLACES_API_KEY=
-DISTANCE_API_KEY=
-SUPABASE_URL=
-SUPABASE_KEY=
-```
-
-### 3. Run the backend
+### Start the backend
 
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
 
-If the finalized Spring Boot scaffold uses Gradle, run `./gradlew bootRun` instead.
+If the Spring Boot project uses Gradle, run `./gradlew bootRun` instead.
 
-### 4. Run the frontend
+### Start the frontend
 
-In another terminal:
+Open a second terminal and run:
 
 ```bash
 cd frontend
@@ -120,34 +101,33 @@ npm run dev
 
 Open the local URL printed by Next.js.
 
-## Project guide
+## API Keys (never commit real values)
 
-| Resource | Purpose |
-| --- | --- |
-| [`frontend/`](./frontend/README.md) | Frontend setup, screens, components, and mock-data workflow |
-| [`backend/`](./backend/README.md) | Backend setup, endpoints, services, and starter schema |
-| [`docs/api-contract.md`](./docs/api-contract.md) | Shared request and response contract |
-| [`docs/mock-data.json`](./docs/mock-data.json) | Sample data for parallel frontend development |
+Create a local `.env` file with:
 
-## Team
+```
+OPENAI_API_KEY=
+PLACES_API_KEY=
+DISTANCE_API_KEY=
+SUPABASE_URL=
+SUPABASE_KEY=
+```
 
-| Team member | Ownership |
-| --- | --- |
-| **Aljaberi** | Preference input, generated-adventure screen, stop list, map, and frontend integration |
-| **Sotonte** | Check-in flow, stamp component, completion states, and Adventure Passport |
-| **David** | Spring Boot API, Places integration, OpenAI integration, and adventure generation |
-| **Parfait** | Supabase, saved adventures and stamps, routing, and final integration |
+Keep the real `.env` file in `.gitignore`. Never push API keys to GitHub.
 
-## Working together
+## GitHub workflow
 
 - Keep `main` stable and ready to demo.
-- Work on an assigned feature branch and make small, clear commits.
-- Open a pull request once a feature works.
-- Have at least one teammate review each pull request.
-- Update the API contract and mock data together whenever a response shape changes.
+- Work on your own feature branch and make small, clear commits.
+- Push changes to GitHub and open a Pull Request when the feature works.
+- Have at least one teammate review the Pull Request.
+- Merge tested frontend and backend work into `main` at integration checkpoints.
+- Never experiment directly on `main`.
 
-```text
-frontend/adventure-screen       # Aljaberi
+Feature branches:
+
+```
+frontend/adventure-screen       # Azeez
 frontend/passport-checkin       # Sotonte
 backend/ai-generation           # David
 backend/supabase-distance       # Parfait
@@ -156,14 +136,10 @@ backend/supabase-distance       # Parfait
 ## Stretch goals
 
 - Social passports with sharing, comments, and comparisons
-- Richer animations and custom stamp designs
-- Improved live GPS check-in and map interactions
-- Adventures in additional cities
+- Improved GPS check-in and map interactions
+- UI animations and more detailed stamp designs
+- Support for additional cities
 
----
+## Main rule
 
-<div align="center">
-
-**Core working experience first. Extra features second.**
-
-</div>
+`main` should always contain a version that the team can demo. A complete core experience is more valuable than several unfinished features.

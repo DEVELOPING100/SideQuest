@@ -8,7 +8,7 @@ npm install
 ```
 
 ## Owners
-- Aljaberi: input screen + generated-adventure display (`src/screens/InputScreen`, `src/screens/AdventureScreen`)
+- Azeez: input screen + generated-adventure display (`src/screens/InputScreen`, `src/screens/AdventureScreen`)
 - Sotonte: check-in flow + passport gallery (`src/screens/CheckinFlow`, `src/screens/PassportGallery`)
 
 ## Build against mock data first — don't wait on the backend
