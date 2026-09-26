@@ -3,10 +3,10 @@
 Turn your free time into a short local adventure — and collect a passport stamp for finishing it.
 
 ## Team & Roles
-- Person 1 — Frontend: core screens (input + generated adventure)
-- Person 2 — Frontend: passport & check-in
-- Person 3 — Backend: API & adventure-generation logic
-- Person 4 — Backend: database & external API integration
+- Azeez — Frontend: core screens (input + generated adventure)
+- Sotonte — Frontend: passport & check-in
+- David — Backend: API & adventure-generation logic
+- Parfait — Backend: database & external API integration
 
 ## How this repo is organized
 ```
