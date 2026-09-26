@@ -1,22 +1,24 @@
 {
   "nearbyPlacesResponse": {
     "places": [
-      { "placeId": "p1", "name": "Riverfront Trail", "category": "nature", "estimatedMinutes": 30, "estimatedCost": 0, "lat": 45.9640, "lng": -66.6440 },
-      { "placeId": "p2", "name": "Local Café", "category": "food", "estimatedMinutes": 30, "estimatedCost": 8, "lat": 45.9650, "lng": -66.6420 },
-      { "placeId": "p3", "name": "Hidden Mural Wall", "category": "art", "estimatedMinutes": 20, "estimatedCost": 0, "lat": 45.9655, "lng": -66.6410 }
+      { "placeId": "p1", "name": "Riverfront Trail", "category": "nature", "description": "A flat, scenic walking path along the river, good for a relaxed pace.", "estimatedMinutes": 30, "estimatedCost": 0, "lat": 45.9640, "lng": -66.6440 },
+      { "placeId": "p2", "name": "Local Café", "category": "food", "description": "Small independent café known for its cold brew and quiet upstairs seating.", "estimatedMinutes": 30, "estimatedCost": 8, "lat": 45.9650, "lng": -66.6420 },
+      { "placeId": "p3", "name": "Hidden Mural Wall", "category": "art", "description": "A large street-art mural tucked behind a downtown parking lot.", "estimatedMinutes": 20, "estimatedCost": 0, "lat": 45.9655, "lng": -66.6410 }
     ]
   },
   "generateAdventureRequestAI": {
     "mode": "ai",
     "location": { "lat": 45.9636, "lng": -66.6431 },
     "budget": 40,
-    "timeMinutes": 120
+    "timeMinutes": 120,
+    "groupSize": 2
   },
   "generateAdventureRequestManual": {
     "mode": "manual",
     "location": { "lat": 45.9636, "lng": -66.6431 },
     "budget": 40,
     "timeMinutes": 120,
+    "groupSize": 2,
     "selectedPlaceIds": ["p1", "p2", "p3"]
   },
   "generateAdventureResponse": {
@@ -25,9 +27,9 @@
     "mode": "ai",
     "totalEstimatedMinutes": 110,
     "stops": [
-      { "stopId": "s1", "name": "Riverfront Trail", "category": "nature", "estimatedMinutes": 30, "lat": 45.9640, "lng": -66.6440, "order": 1 },
-      { "stopId": "s2", "name": "Local Café", "category": "food", "estimatedMinutes": 30, "lat": 45.9650, "lng": -66.6420, "order": 2 },
-      { "stopId": "s3", "name": "Hidden Mural Wall", "category": "art", "estimatedMinutes": 20, "lat": 45.9655, "lng": -66.6410, "order": 3 }
+      { "stopId": "s1", "name": "Riverfront Trail", "category": "nature", "description": "A flat, scenic walking path along the river, good for a relaxed pace.", "estimatedMinutes": 30, "lat": 45.9640, "lng": -66.6440, "order": 1 },
+      { "stopId": "s2", "name": "Local Café", "category": "food", "description": "Small independent café known for its cold brew and quiet upstairs seating.", "estimatedMinutes": 30, "lat": 45.9650, "lng": -66.6420, "order": 2 },
+      { "stopId": "s3", "name": "Hidden Mural Wall", "category": "art", "description": "A large street-art mural tucked behind a downtown parking lot.", "estimatedMinutes": 20, "lat": 45.9655, "lng": -66.6410, "order": 3 }
     ]
   },
   "checkinResponse": {
