@@ -78,5 +78,13 @@ alter table public.adventures enable row level security;
 alter table public.stops enable row level security;
 alter table public.stamps enable row level security;
 
--- No public RLS policies are created here. The Spring Boot backend will use
--- secure server-side credentials. Add user policies later if Supabase Auth is used.
+-- Allow the server-only secret key to use these tables through the Data API.
+-- No access is granted to the public anon or authenticated roles.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on table public.users to service_role;
+grant select, insert, update, delete on table public.adventures to service_role;
+grant select, insert, update, delete on table public.stops to service_role;
+grant select, insert, update, delete on table public.stamps to service_role;
+
+-- No public RLS policies are created here. Add user policies later if
+-- Supabase Auth is used directly by the frontend.
