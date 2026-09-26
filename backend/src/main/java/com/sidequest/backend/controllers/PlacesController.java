@@ -1,11 +1,24 @@
 package com.sidequest.backend.controllers;
 
-import org.springframework.web.bind.annotation.*;
-import java.util.*;
+import com.sidequest.backend.models.PlaceOption;
+import com.sidequest.backend.services.PlaceCatalogService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/places")
 public class PlacesController {
+
+    private final PlaceCatalogService placeCatalogService;
+
+    public PlacesController(PlaceCatalogService placeCatalogService) {
+        this.placeCatalogService = placeCatalogService;
+    }
 
     @GetMapping("/nearby")
     public Map<String, Object> getNearbyPlaces(
@@ -15,17 +28,7 @@ public class PlacesController {
         @RequestParam int timeMinutes,
         @RequestParam(required = false, defaultValue = "1") int groupSize
     ) {
-        List<Map<String, Object>> places = new ArrayList<>();
-        places.add(Map.of(
-            "placeId", "p1", "name", "Riverfront Trail", "category", "nature",
-            "description", "A flat, scenic walking path along the river, good for a relaxed pace.",
-            "estimatedMinutes", 30, "estimatedCost", 0, "lat", 45.9640, "lng", -66.6440
-        ));
-        places.add(Map.of(
-            "placeId", "p2", "name", "Local Cafe", "category", "food",
-            "description", "Small independent cafe known for its cold brew and quiet upstairs seating.",
-            "estimatedMinutes", 30, "estimatedCost", 8, "lat", 45.9650, "lng", -66.6420
-        ));
+        List<PlaceOption> places = placeCatalogService.nearbyPlaces();
         return Map.of("places", places);
     }
 }

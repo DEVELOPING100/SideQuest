@@ -83,11 +83,8 @@ cd SideQuest
 ### Start the backend
 
 ```bash
-cd backend
-./mvnw spring-boot:run
+./backend/run-local.sh
 ```
-
-If the Spring Boot project uses Gradle, run `./gradlew bootRun` instead.
 
 ### Start the frontend
 
