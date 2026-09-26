@@ -1,51 +1,33 @@
 {
-  "generateAdventureRequest": {
+  "nearbyPlacesResponse": {
+    "places": [
+      { "placeId": "p1", "name": "Riverfront Trail", "category": "nature", "estimatedMinutes": 30, "estimatedCost": 0, "lat": 45.9640, "lng": -66.6440 },
+      { "placeId": "p2", "name": "Local Café", "category": "food", "estimatedMinutes": 30, "estimatedCost": 8, "lat": 45.9650, "lng": -66.6420 },
+      { "placeId": "p3", "name": "Hidden Mural Wall", "category": "art", "estimatedMinutes": 20, "estimatedCost": 0, "lat": 45.9655, "lng": -66.6410 }
+    ]
+  },
+  "generateAdventureRequestAI": {
+    "mode": "ai",
     "location": { "lat": 45.9636, "lng": -66.6431 },
-    "budget": "medium",
+    "budget": 40,
+    "timeMinutes": 120
+  },
+  "generateAdventureRequestManual": {
+    "mode": "manual",
+    "location": { "lat": 45.9636, "lng": -66.6431 },
+    "budget": 40,
     "timeMinutes": 120,
-    "groupSize": 2,
-    "vibe": "chill",
-    "travelMode": "walking"
+    "selectedPlaceIds": ["p1", "p2", "p3"]
   },
   "generateAdventureResponse": {
     "adventureId": "adv_123",
     "title": "A Chill Riverside Afternoon",
+    "mode": "ai",
     "totalEstimatedMinutes": 110,
-    "estimatedCost": "medium",
     "stops": [
-      {
-        "stopId": "s1",
-        "name": "Riverfront Trail",
-        "category": "nature",
-        "estimatedMinutes": 30,
-        "estimatedCost": "free",
-        "lat": 45.9640,
-        "lng": -66.6440,
-        "order": 1,
-        "aiReason": "A relaxed start that fits the chill vibe and works for a group of 2"
-      },
-      {
-        "stopId": "s2",
-        "name": "Local Café",
-        "category": "food",
-        "estimatedMinutes": 30,
-        "estimatedCost": "low",
-        "lat": 45.9650,
-        "lng": -66.6420,
-        "order": 2,
-        "aiReason": "Low-cost coffee stop within walking distance"
-      },
-      {
-        "stopId": "s3",
-        "name": "Hidden Mural Wall",
-        "category": "art",
-        "estimatedMinutes": 20,
-        "estimatedCost": "free",
-        "lat": 45.9655,
-        "lng": -66.6410,
-        "order": 3,
-        "aiReason": "A quick, free stop that adds variety without eating into the time budget"
-      }
+      { "stopId": "s1", "name": "Riverfront Trail", "category": "nature", "estimatedMinutes": 30, "lat": 45.9640, "lng": -66.6440, "order": 1 },
+      { "stopId": "s2", "name": "Local Café", "category": "food", "estimatedMinutes": 30, "lat": 45.9650, "lng": -66.6420, "order": 2 },
+      { "stopId": "s3", "name": "Hidden Mural Wall", "category": "art", "estimatedMinutes": 20, "lat": 45.9655, "lng": -66.6410, "order": 3 }
     ]
   },
   "checkinResponse": {
@@ -66,13 +48,7 @@
   "passportResponse": {
     "userId": "u1",
     "stamps": [
-      {
-        "stampId": "st1",
-        "adventureId": "adv_123",
-        "title": "A Chill Riverside Afternoon",
-        "earnedAt": "2026-09-26T15:00:00Z",
-        "stopCount": 3
-      }
+      { "stampId": "st1", "adventureId": "adv_123", "title": "A Chill Riverside Afternoon", "mode": "ai", "earnedAt": "2026-09-26T15:00:00Z", "stopCount": 3 }
     ]
   }
 }
