@@ -1,15 +1,50 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { SAMPLE_PASSPORT } from '../data/samplePassport';
+import { getPassport } from '../api';
 
-const quest = SAMPLE_PASSPORT[0];
 const C = { paper: '#FFFEFA', ink: '#173E39', lime: '#D6F65B', pale: '#F0F4D5', muted: '#6B817B' };
 
 export default function StampEarnedScreen() {
   const router = useRouter();
+  const { adventureId } = useLocalSearchParams();
+  const [stamp, setStamp] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    async function loadStamp() {
+      setLoading(true);
+      setError('');
+      setStamp(null);
+      try {
+        if (typeof adventureId !== 'string' || !adventureId) {
+          throw new Error('Open this screen from a completed adventure to see its stamp.');
+        }
+        const passport = await getPassport();
+        if (!Array.isArray(passport.stamps)) throw new Error('The passport response is missing its stamps.');
+        // The backend returns newest first. Match this adventure, not another quest.
+        const earned = passport.stamps.find(item => item.adventureId === adventureId);
+        if (!earned) throw new Error('No saved stamp was found for this adventure yet. Please retry.');
+        if (active) setStamp(earned);
+      } catch (err) {
+        if (active) setError(err.message || 'Unable to load your earned stamp.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    loadStamp();
+    return () => { active = false; };
+  }, [adventureId, attempt]);
+
+  const earnedDate = stamp?.earnedAt ? new Date(stamp.earnedAt) : null;
+  const dateLabel = earnedDate && !Number.isNaN(earnedDate.getTime())
+    ? earnedDate.toLocaleDateString() : 'Date unavailable';
   function back() {
     if (router.canGoBack()) router.back();
     else router.replace('/');
@@ -19,32 +54,44 @@ export default function StampEarnedScreen() {
     <View pointerEvents="none" style={styles.glowTop} />
     <View pointerEvents="none" style={styles.glowBottom} />
     <View style={styles.header}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Back to demo" onPress={back} style={styles.back}><Feather name="chevron-left" size={24} color={C.ink} /></Pressable>
-      <Text style={styles.demo}>COMPLETION PREVIEW</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={back} style={styles.back}><Feather name="chevron-left" size={24} color={C.ink} /></Pressable>
+      <Text style={styles.demo}>ADVENTURE PASSPORT</Text>
     </View>
     <ScrollView contentContainerStyle={styles.content}>
-      <Text style={styles.eyebrow}>QUEST STAMP · DEMO</Text>
+      {loading ? <View style={styles.state}>
+        <ActivityIndicator color={C.ink} size="large" />
+        <Text accessibilityLiveRegion="polite" style={styles.description}>Loading your earned stamp...</Text>
+      </View> : error ? <View style={styles.state}>
+        <Text style={styles.title}>Stamp unavailable</Text>
+        <Text accessibilityRole="alert" style={styles.description}>{error}</Text>
+        <Pressable accessibilityRole="button" onPress={() => setAttempt(value => value + 1)} style={styles.button}>
+          <Text style={styles.buttonText}>Retry</Text>
+        </Pressable>
+      </View> : stamp && <>
+      <Text style={styles.eyebrow}>QUEST STAMP EARNED</Text>
       <Text accessibilityRole="header" style={styles.title}>Nice one, explorer!</Text>
-      <Text style={styles.description}>Every stop, a little story. Here’s how we’ll celebrate when you complete your whole adventure.</Text>
-      <View style={styles.stampArea} accessible accessibilityLabel={`Sample ${quest.title} quest stamp, ${quest.city}. Not an earned reward.`}>
+      <Text style={styles.description}>{stamp.title}</Text>
+      <View style={styles.stampArea} accessible accessibilityLabel={`Earned ${stamp.title} quest stamp, ${stamp.stopCount} stops completed.`}>
         <View style={styles.stampShadow} />
         <View style={styles.stampOuter}><View style={styles.stampInner}><View style={styles.stampLine}>
-          <Text style={styles.stampTitle}>{quest.title.toUpperCase()}</Text>
-          <Feather name={quest.icon} size={30} color={C.ink} />
-          <Text style={styles.stampPlace}>{quest.city.toUpperCase()}</Text>
-          <Text style={styles.stampSample}>SAMPLE QUEST</Text>
+          <Text style={styles.stampTitle} numberOfLines={3}>{stamp.title.toUpperCase()}</Text>
+          <Feather name="award" size={30} color={C.ink} />
+          <Text style={styles.stampPlace}>{stamp.stopCount} {stamp.stopCount === 1 ? 'STOP' : 'STOPS'} COMPLETED</Text>
+          <Text style={styles.stampSample}>{dateLabel}</Text>
         </View></View></View>
         <Text style={styles.sparkCoral}>✦</Text><Text style={styles.sparkGreen}>✦</Text>
       </View>
-      <View style={styles.buttonShadow}><Pressable accessibilityRole="button" accessibilityLabel="See the sample collection in my passport" onPress={() => router.push('/passport')} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
+      </>}
+      <View style={styles.buttonShadow}><Pressable accessibilityRole="button" accessibilityLabel="See it in my passport" onPress={() => router.push('/passport')} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
         <Text style={styles.buttonText}>See it in my passport</Text><Feather name="arrow-right" size={22} color={C.ink} />
       </Pressable></View>
       <Pressable accessibilityRole="button" onPress={() => router.dismissTo('/')} style={styles.explore}><Text style={styles.exploreText}>Keep exploring</Text></Pressable>
-      <Text style={styles.note}>Design preview only. No quest was completed or stamp saved. A real stamp is awarded after every stop is checked in.</Text>
+      {stamp && !loading && !error && <Text style={styles.note}>Saved to your Adventure Passport.</Text>}
     </ScrollView>
   </SafeAreaView>;
 }
 const styles = StyleSheet.create({
+  state: { alignItems: 'center', gap: 20, marginBottom: 28 },
   safe: { flex: 1, backgroundColor: C.paper, overflow: 'hidden' },
   glowTop: { position: 'absolute', width: 340, height: 340, borderRadius: 170, top: -120, left: -170, backgroundColor: '#F5FAD9' },
   glowBottom: { position: 'absolute', width: 370, height: 480, borderRadius: 185, bottom: -150, right: -250, backgroundColor: '#FFF0E9' },

@@ -1,11 +1,11 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { checkIn } from '../api';
-import { getCurrentAdventure, toScreenStops } from '../data/adventureStore';
+import { checkIn, getAdventure } from '../api';
+import { getCurrentAdventure, setCurrentAdventure, toScreenStops } from '../data/adventureStore';
 
 const C = { paper: '#FFFEFA', ink: '#173E39', deep: '#12322E', lime: '#D6F65B', pale: '#F0F4D5', muted: '#BDD0C9' };
 
@@ -20,6 +20,8 @@ export default function CheckInScreen() {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [completionConfirmed, setCompletionConfirmed] = useState(false);
+  const pending = useRef(false);
 
   if (!adventure || stops.length === 0) {
     return <SafeAreaView style={styles.emptySafe}>
@@ -36,27 +38,44 @@ export default function CheckInScreen() {
   const isDone = completed.has(stop.id);
   const isLast = viewIndex === stops.length - 1;
   const remaining = stops.length - completed.size;
+  const allComplete = stops.every(item => completed.has(item.id));
 
   async function doCheckIn() {
+    if (pending.current) return;
+    pending.current = true;
     setBusy(true);
     setError(null);
+    setCompletionConfirmed(false);
     try {
       // Simulated check-in: send the stop's own coordinates so it works anywhere for the demo
-      await checkIn(adventure.adventureId, { stopId: stop.stopId, lat: stop.lat, lng: stop.lng });
-      const next = new Set(completed);
-      next.add(stop.id);
-      setCompleted(next);
+      if (!isDone) {
+        const result = await checkIn(adventure.adventureId, { stopId: stop.stopId, lat: stop.lat, lng: stop.lng });
+        if (result?.success !== true || result.stopId !== stop.stopId) {
+          throw new Error('The backend did not confirm this check-in. Please try again.');
+        }
+      }
+      // Confirm saved flags before offering the stamp, and preserve them on return.
+      const saved = await getAdventure(adventure.adventureId);
+      if (!Array.isArray(saved.stops) || saved.stops.length === 0) {
+        throw new Error('Unable to confirm saved progress. Please try again.');
+      }
+      setCurrentAdventure({ ...saved, travel: adventure.travel });
+      setCompleted(new Set(saved.stops.filter(item => item.completed).map(item => item.stopId)));
+      setCompletionConfirmed(saved.stops.every(item => item.completed === true));
     } catch (e) {
       setError(e.message || 'Check-in failed. Try again.');
     } finally {
+      pending.current = false;
       setBusy(false);
     }
   }
 
   function onPrimary() {
-    if (!isDone) doCheckIn();
-    else if (!isLast) setViewIndex(viewIndex + 1);
-    else router.push('/stamp-earned');
+    if (pending.current) return;
+    if (allComplete && completionConfirmed) {
+      router.push({ pathname: '/stamp-earned', params: { adventureId: adventure.adventureId } });
+    } else if (!isDone || allComplete) doCheckIn();
+    else setViewIndex(stops.findIndex(item => !completed.has(item.id)));
   }
 
   function openRoute() {
@@ -67,10 +86,11 @@ export default function CheckInScreen() {
     Linking.openURL(url).catch(() => setError('Could not open maps on this phone.'));
   }
 
-  const primaryLabel = !isDone ? 'Check in & collect my stamp' : (!isLast ? 'Next stop' : 'See my stamp');
+  const primaryLabel = allComplete && completionConfirmed ? 'See my stamp'
+    : allComplete ? 'Confirm saved completion' : !isDone ? 'Check in & collect my stamp' : 'Next stop';
   const title = isDone ? 'Stop collected!' : 'You made it!';
   const intro = isDone
-    ? (isLast ? 'That was the last stop. Your quest stamp is waiting for you.' : `Nice one. ${remaining} ${remaining === 1 ? 'stop' : 'stops'} to go.`)
+    ? (allComplete && completionConfirmed ? 'Every stop is complete. Your quest stamp is waiting for you.' : `Nice one. ${remaining} ${remaining === 1 ? 'stop' : 'stops'} to go.`)
     : 'Take a moment to look around, then check in to make this stop officially yours.';
 
   return <SafeAreaView style={styles.safe} edges={['top']}>
