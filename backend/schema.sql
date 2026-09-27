@@ -88,3 +88,7 @@ grant select, insert, update, delete on table public.stamps to service_role;
 
 -- No public RLS policies are created here. Add user policies later if
 -- Supabase Auth is used directly by the frontend.
+
+-- Adventure mode (ai or manual)
+alter table adventures add column if not exists mode text not null default 'manual';
+alter table stamps add column if not exists mode text not null default 'manual';
