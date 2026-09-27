@@ -6,7 +6,7 @@ import Feather from '@expo/vector-icons/Feather';
 
 const MODES = { walk: 'walking', bike: 'bicycling', drive: 'driving' };
 
-export default function AdventureMap({ stops = [], travel = 'Walk' }) {
+export default function AdventureMap({ stops = [], travel = 'Walk', city = 'Fredericton' }) {
   const map = useRef(null);
   const [hasPermission, setHasPermission] = useState(false);
   const coordinates = stops.map(stop => stop.coordinate);
@@ -63,7 +63,7 @@ export default function AdventureMap({ stops = [], travel = 'Walk' }) {
         ))}
       </MapView>
       <View pointerEvents="none" style={styles.badge}>
-        <Text style={styles.badgeText}>{`FREDERICTON \u00b7 ${stops.length} STOPS`}</Text>
+        <Text style={styles.badgeText}>{`${city.toUpperCase()} \u00b7 ${stops.length} STOPS`}</Text>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel="Show all stops on the map" onPress={showAllStops} style={styles.recenter}>
         <Feather name="maximize" size={20} color="#173E39" />

@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import Motion from '../components/Motion';
 import { getPassport } from '../api';
 
-const C = { paper: '#FFFEFA', ink: '#173E39', lime: '#D6F65B', pale: '#F0F4D5', muted: '#6B817B' };
+const C = { paper: '#FFFDFA', ink: '#173E39', lime: '#D1FF4A', pale: '#F0F4D5', muted: '#6B817B' };
 
 export default function StampEarnedScreen() {
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function StampEarnedScreen() {
       <Text style={styles.eyebrow}>QUEST STAMP EARNED</Text>
       <Text accessibilityRole="header" style={styles.title}>Nice one, explorer!</Text>
       <Text style={styles.description}>{stamp.title}</Text>
-      <View style={styles.stampArea} accessible accessibilityLabel={`Earned ${stamp.title} quest stamp, ${stamp.stopCount} stops completed.`}>
+      <Motion style={styles.stampArea} accessible accessibilityLabel={`Earned ${stamp.title} quest stamp, ${stamp.stopCount} stops completed.`}>
         <View style={styles.stampShadow} />
         <View style={styles.stampOuter}><View style={styles.stampInner}><View style={styles.stampLine}>
           <Text style={styles.stampTitle} numberOfLines={3}>{stamp.title.toUpperCase()}</Text>
@@ -80,12 +81,12 @@ export default function StampEarnedScreen() {
           <Text style={styles.stampSample}>{dateLabel}</Text>
         </View></View></View>
         <Text style={styles.sparkCoral}>✦</Text><Text style={styles.sparkGreen}>✦</Text>
-      </View>
+      </Motion>
       </>}
       <View style={styles.buttonShadow}><Pressable accessibilityRole="button" accessibilityLabel="See it in my passport" onPress={() => router.push('/passport')} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
         <Text style={styles.buttonText}>See it in my passport</Text><Feather name="arrow-right" size={22} color={C.ink} />
       </Pressable></View>
-      <Pressable accessibilityRole="button" onPress={() => router.dismissTo('/')} style={styles.explore}><Text style={styles.exploreText}>Keep exploring</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={() => router.dismissTo('/')} style={styles.explore}><Text style={styles.exploreText}>End journey</Text></Pressable>
       {stamp && !loading && !error && <Text style={styles.note}>Saved to your Adventure Passport.</Text>}
     </ScrollView>
   </SafeAreaView>;
@@ -94,14 +95,14 @@ const styles = StyleSheet.create({
   state: { alignItems: 'center', gap: 20, marginBottom: 28 },
   safe: { flex: 1, backgroundColor: C.paper, overflow: 'hidden' },
   glowTop: { position: 'absolute', width: 340, height: 340, borderRadius: 170, top: -120, left: -170, backgroundColor: '#F5FAD9' },
-  glowBottom: { position: 'absolute', width: 370, height: 480, borderRadius: 185, bottom: -150, right: -250, backgroundColor: '#FFF0E9' },
+  glowBottom: { position: 'absolute', width: 370, height: 480, borderRadius: 185, bottom: -150, right: -250, backgroundColor: '#F5FAD9' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: 5 },
   back: { width: 44, height: 44, justifyContent: 'center' }, demo: { color: C.muted, fontSize: 9, letterSpacing: 1.3 },
   content: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 26, paddingTop: 30, paddingBottom: 25 },
   eyebrow: { fontSize: 12, letterSpacing: 2, color: C.muted, marginBottom: 23 },
   title: { color: C.ink, fontSize: 33, fontWeight: '800', letterSpacing: -1, textAlign: 'center', marginBottom: 13 },
   description: { color: C.muted, fontSize: 15, lineHeight: 23, textAlign: 'center', maxWidth: 340 },
-  stampArea: { width: '85%', maxWidth: 270, aspectRatio: 1, marginTop: 30, marginBottom: 34 },
+  stampArea: { width: '85%', maxWidth: 270, aspectRatio: 1, flexShrink: 0, marginTop: 32, marginBottom: 36 },
   stampShadow: { position: 'absolute', left: 10, top: 10, width: '100%', height: '100%', borderRadius: 150, backgroundColor: C.lime },
   stampOuter: { flex: 1, backgroundColor: C.pale, borderWidth: 1.8, borderColor: C.ink, borderRadius: 150, padding: 24 },
   stampInner: { flex: 1, borderRadius: 150, borderWidth: 1.6, borderColor: C.ink, backgroundColor: C.paper, padding: 3 },
@@ -109,8 +110,8 @@ const styles = StyleSheet.create({
   stampTitle: { color: C.ink, fontSize: 11, letterSpacing: 1.4, textAlign: 'center' },
   stampPlace: { color: C.ink, fontSize: 10, letterSpacing: 0.8, textAlign: 'center' }, stampSample: { fontSize: 8, color: C.muted, letterSpacing: 1 },
   sparkCoral: { position: 'absolute', top: 26, left: -12, color: '#FF765B', fontSize: 30 }, sparkGreen: { position: 'absolute', right: -11, bottom: 22, color: C.ink, fontSize: 30 },
-  buttonShadow: { width: '100%', backgroundColor: '#12322E', borderRadius: 23, paddingRight: 4, paddingBottom: 5 },
-  button: { minHeight: 64, borderRadius: 22, borderWidth: 1.8, borderColor: C.ink, backgroundColor: C.lime, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 },
+  buttonShadow: { width: '100%', borderRadius: 24 },
+  button: { minHeight: 64, borderRadius: 24, backgroundColor: C.lime, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 15 },
   buttonText: { fontSize: 18, fontWeight: '800', color: C.ink, flexShrink: 1, textAlign: 'center' }, pressed: { transform: [{ translateX: 2 }, { translateY: 3 }] },
   explore: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 18, marginTop: 10 }, exploreText: { fontSize: 14, color: C.ink },
   note: { marginTop: 13, fontSize: 11, color: C.muted, textAlign: 'center', lineHeight: 17, maxWidth: 320 },
