@@ -1,10 +1,13 @@
 // SideQuest API client
 // Screens should call these functions instead of importing mock-data.json.
-// During development, Vite forwards /api/... to the backend on localhost:8080.
-
-const BASE = '/api';
+// Native apps need an absolute API URL; there is no Vite proxy.
+// Set this to your computer's LAN address when testing on a phone.
+const BASE = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
 
 async function request(path, options = {}) {
+  if (!BASE || !/^https?:\/\//.test(BASE)) {
+    throw new Error('Set EXPO_PUBLIC_API_URL to an absolute backend URL ending in /api.');
+  }
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
