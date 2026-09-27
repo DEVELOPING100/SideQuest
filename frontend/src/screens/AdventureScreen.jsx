@@ -43,6 +43,8 @@ export default function AdventureScreen() {
           budget: nonNegative(budget, 25),
           timeMinutes: positive(minutes, 90),
           groupSize: positive(group, 2),
+          vibes: vibes.split(' + ').filter(v => v && v !== 'Open to any vibe'),
+          travelMode: travel,
         });
         let full = created;
         try {
@@ -146,5 +148,6 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   primaryPressed: { transform: [{ translateX: 2 }, { translateY: 3 }] }, primaryText: { fontSize: 20, fontWeight: '800', color: C.ink, letterSpacing: -0.5 },
 });
+
 
 
