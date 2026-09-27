@@ -14,15 +14,18 @@ public class AdventureService {
     private final PlaceCatalogService placeCatalogService;
     private final RoutingService routingService;
     private final SupabaseAdventureService supabaseAdventureService;
+    private final OpenAiService openAiService;
 
     public AdventureService(
         PlaceCatalogService placeCatalogService,
         RoutingService routingService,
-        SupabaseAdventureService supabaseAdventureService
+        SupabaseAdventureService supabaseAdventureService,
+        OpenAiService openAiService
     ) {
         this.placeCatalogService = placeCatalogService;
         this.routingService = routingService;
         this.supabaseAdventureService = supabaseAdventureService;
+        this.openAiService = openAiService;
     }
 
     public AdventureResponse generate(GenerateAdventureRequest request) {
@@ -32,7 +35,19 @@ public class AdventureService {
 
         validate(request);
 
-        List<PlaceOption> places = placeCatalogService.selectPlaces(request.selectedPlaceIds());
+        String mode = request.mode() == null ? "manual" : request.mode();
+        List<String> placeIds = request.selectedPlaceIds();
+
+        if (mode.equals("ai")) {
+            placeIds = openAiService.pickPlaces(
+                placeCatalogService.nearbyPlaces(),
+                request.budget(),
+                request.timeMinutes(),
+                request.groupSize()
+            );
+        }
+
+        List<PlaceOption> places = placeCatalogService.selectPlaces(placeIds);
         RoutePlan routePlan = routingService.calculate(places, "walking");
         return supabaseAdventureService.save(request, places, routePlan);
     }
