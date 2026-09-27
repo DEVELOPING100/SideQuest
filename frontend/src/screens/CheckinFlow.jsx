@@ -1,46 +1,122 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import adventure from '../data/mockCheckinAdventure.json';
+import { checkInAtStop, getAdventure } from '../api';
 
-const MOCK_DISTANCE_METERS = 32;
 const C = { ink: '#173E39', dark: '#12322E', lime: '#D6F65B', paper: '#FFFEFA', pale: '#F0F4D5', muted: '#6B817B', light: '#C1D1CC' };
 
-function createInitialStops() {
-  // Copy the sample data so checking in never changes the imported object.
-  return adventure.stops.map(stop => ({ ...stop, completed: false }));
-}
-
-export default function CheckinFlow() {
+export default function CheckinFlow({ adventureId }) {
   const router = useRouter();
-  const [stops, setStops] = useState(createInitialStops);
+  const [adventure, setAdventure] = useState(null);
+  const [stops, setStops] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [checkInError, setCheckInError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [reloadCount, setReloadCount] = useState(0);
   const [lastCompletedName, setLastCompletedName] = useState('');
+  const mounted = useRef(false);
+  const requestPending = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAdventure() {
+      setLoading(true);
+      setLoadError('');
+      setCheckInError('');
+      setLastCompletedName('');
+      try {
+        if (!adventureId) throw new Error('Open Check-in with an adventureId from a saved adventure.');
+        const data = await getAdventure(adventureId);
+        if (!Array.isArray(data.stops)) throw new Error('The adventure response is missing its stops.');
+        if (active) {
+          setAdventure(data);
+          // Keep the backend completed flags; sort a copy into itinerary order.
+          setStops([...data.stops].sort((a, b) => a.order - b.order));
+        }
+      } catch (error) {
+        if (active) setLoadError(error.message || 'Unable to load this adventure.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadAdventure();
+    // Ignore a response that arrives after leaving this screen or retrying.
+    return () => { active = false; };
+  }, [adventureId, reloadCount]);
 
   // Derive progress from the stops instead of storing a separate counter.
   const completedCount = stops.filter(stop => stop.completed).length;
   const currentStop = stops.find(stop => !stop.completed);
   const adventureComplete = stops.length > 0 && completedCount === stops.length;
 
-  function simulateCheckIn() {
-    if (!currentStop) return;
-    // Reuse the old check-in screen's immutable update, with no API request.
-    setStops(previousStops => previousStops.map(stop =>
-      stop.stopId === currentStop.stopId ? { ...stop, completed: true } : stop
-    ));
-    setLastCompletedName(currentStop.name);
+  async function simulateCheckIn() {
+    if (!currentStop || requestPending.current) return;
+    // The ref blocks rapid double taps before React redraws the disabled button.
+    requestPending.current = true;
+    setSubmitting(true);
+    setCheckInError('');
+    try {
+      const result = await checkInAtStop(adventureId, currentStop, { useGps: false });
+      if (result?.success !== true || result.stopId !== currentStop.stopId) {
+        throw new Error('The server did not confirm this stop\'s check-in. Reload progress before retrying.');
+      }
+      if (!mounted.current) return;
+      // Only update local progress after the backend confirms this exact stop.
+      setStops(previousStops => previousStops.map(stop =>
+        stop.stopId === currentStop.stopId
+          ? { ...stop, completed: true, completedAt: result.completedAt }
+          : stop
+      ));
+      setLastCompletedName(currentStop.name);
+    } catch (error) {
+      if (mounted.current) setCheckInError(error.message || 'Unable to check in. Please try again.');
+    } finally {
+      requestPending.current = false;
+      if (mounted.current) setSubmitting(false);
+    }
   }
 
-  function resetDemo() {
-    setStops(createInitialStops());
-    setLastCompletedName('');
+  function reloadProgress() {
+    if (!requestPending.current) setReloadCount(count => count + 1);
   }
 
   function goBack() {
     if (router.canGoBack()) router.back();
     else router.replace('/');
+  }
+
+  if (loading || loadError || stops.length === 0) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <StatusBar style="light" />
+        <View style={styles.hero}>
+          <Text style={styles.title}>Adventure check-in</Text>
+          {loading ? <ActivityIndicator color={C.lime} accessibilityLabel="Loading adventure" /> : null}
+          <Text accessibilityLiveRegion="polite" style={styles.intro}>
+            {loading ? 'Loading your saved adventure…' : loadError || 'This adventure has no stops to check in to.'}
+          </Text>
+          {!loading && adventureId ? (
+            <Pressable accessibilityRole="button" onPress={reloadProgress} style={styles.primaryButton}>
+              <Text style={styles.primaryText}>Retry loading</Text>
+            </Pressable>
+          ) : null}
+          <Pressable accessibilityRole="button" onPress={goBack} style={styles.resetButton}>
+            <Text style={styles.intro}>Go back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -53,7 +129,7 @@ export default function CheckinFlow() {
               style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
               <Feather name="arrow-left" size={22} color={C.paper} />
             </Pressable>
-            <Text style={styles.demoBadge}>MOCK ADVENTURE</Text>
+            <Text style={styles.demoBadge}>SIMULATED CHECK-IN</Text>
           </View>
           <Text style={styles.eyebrow}>
             {currentStop ? `STOP ${currentStop.order} OF ${stops.length} · ${currentStop.category.toUpperCase()}` : 'ALL STOPS COMPLETED'}
@@ -61,8 +137,8 @@ export default function CheckinFlow() {
           <Text style={styles.title}>{adventureComplete ? 'You did it!' : 'You made it!'}</Text>
           <Text style={styles.intro}>
             {adventureComplete
-              ? 'Your practice adventure is complete. Reset the demo to try again.'
-              : 'Try a check-in at this stop. This preview uses sample data, so you can explore the flow from anywhere.'}
+              ? 'All stops in your adventure are complete.'
+              : 'Simulate your arrival at this stop. Your check-in will be saved to this adventure.'}
           </Text>
           <View style={styles.zone}>
             <View style={styles.innerZone}>
@@ -71,7 +147,7 @@ export default function CheckinFlow() {
               </View>
             </View>
             <View style={styles.distanceBadge}>
-              <Text style={styles.distanceText}>{adventureComplete ? 'Demo complete' : `${MOCK_DISTANCE_METERS} m away · mock`}</Text>
+              <Text style={styles.distanceText}>{adventureComplete ? 'Adventure complete' : 'Location simulated'}</Text>
             </View>
           </View>
           <Text style={styles.zoneNote}>Demo only · GPS is not connected</Text>
@@ -83,21 +159,23 @@ export default function CheckinFlow() {
             <Text style={styles.stopTitle}>{currentStop ? currentStop.name : adventure.title}</Text>
             {currentStop && <Text style={styles.metadata}>{currentStop.category} · {currentStop.estimatedMinutes} min at this stop</Text>}
             <Text style={styles.description}>
-              {currentStop ? currentStop.description : 'All stops are checked in locally. No stamp has been created or saved yet.'}
+              {currentStop ? currentStop.description : 'Your completed stops are saved by the backend.'}
             </Text>
             {lastCompletedName !== '' && (
               <Text accessibilityLiveRegion="polite" style={styles.confirmation}>
                 ✓ {lastCompletedName} checked in (simulated).
               </Text>
             )}
+            {checkInError !== '' && <Text accessibilityRole="alert" style={styles.error}>{checkInError}</Text>}
             <View style={styles.buttonShadow}>
-              <Pressable accessibilityRole="button" onPress={adventureComplete ? resetDemo : simulateCheckIn}
-                style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-                <Text style={styles.primaryText}>{adventureComplete ? 'Try the demo again' : 'Simulate check-in'}</Text>
-                <Feather name={adventureComplete ? 'rotate-ccw' : 'arrow-right'} size={22} color={C.ink} />
+              <Pressable accessibilityRole="button" onPress={adventureComplete ? reloadProgress : simulateCheckIn}
+                disabled={submitting} accessibilityState={{ disabled: submitting, busy: submitting }}
+                style={({ pressed }) => [styles.primaryButton, (pressed || submitting) && styles.pressed]}>
+                <Text style={styles.primaryText}>{submitting ? 'Checking in…' : adventureComplete ? 'Reload saved progress' : 'Simulate Check-In'}</Text>
+                {submitting ? <ActivityIndicator color={C.ink} /> : <Feather name={adventureComplete ? 'rotate-ccw' : 'arrow-right'} size={22} color={C.ink} />}
               </Pressable>
             </View>
-            <Text style={styles.temporaryNote}>Temporary demo · progress stays on this screen only</Text>
+            <Text style={styles.temporaryNote}>Simulated location · real saved progress</Text>
           </View>
 
           <View style={styles.progressHeader}>
@@ -125,8 +203,9 @@ export default function CheckinFlow() {
             );
           })}
           {!adventureComplete && (
-            <Pressable accessibilityRole="button" onPress={resetDemo} style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]}>
-              <Text style={styles.resetText}>Reset demo progress</Text>
+            <Pressable accessibilityRole="button" onPress={reloadProgress} disabled={submitting}
+              accessibilityState={{ disabled: submitting }} style={({ pressed }) => [styles.resetButton, (pressed || submitting) && styles.pressed]}>
+              <Text style={styles.resetText}>Reload saved progress</Text>
             </Pressable>
           )}
         </View>
@@ -163,6 +242,7 @@ const styles = StyleSheet.create({
   primaryButton: { minHeight: 60, borderRadius: 22, borderWidth: 2, borderColor: C.ink, backgroundColor: C.lime, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   primaryText: { color: C.ink, fontSize: 18, fontWeight: '800', flexShrink: 1 },
   pressed: { opacity: 0.7 },
+  error: { color: '#A23528', fontSize: 14, lineHeight: 20, marginBottom: 16 },
   temporaryNote: { color: C.muted, fontSize: 11, textAlign: 'center', marginTop: 12, lineHeight: 17 },
   progressHeader: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 28 },
   sectionTitle: { color: C.ink, fontSize: 19, fontWeight: '700' },
