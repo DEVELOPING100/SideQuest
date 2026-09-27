@@ -60,7 +60,10 @@ export default function CheckInScreen() {
   }
 
   function openRoute() {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}&travelmode=walking`;
+    const modes = { walk: 'walking', bike: 'bicycling', drive: 'driving' };
+    const mode = modes[String(adventure.travel || '').toLowerCase()] || 'walking';
+    // No origin given: Google Maps starts from the phone's current location
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}&travelmode=${mode}`;
     Linking.openURL(url).catch(() => setError('Could not open maps on this phone.'));
   }
 
@@ -137,3 +140,4 @@ const styles = StyleSheet.create({
   bottom: { flex: 1, minHeight: 100, justifyContent: 'flex-end', alignItems: 'center', paddingVertical: 22, paddingHorizontal: 24 },
   routeButton: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 44, padding: 10 }, routeText: { fontSize: 14, color: C.ink, flexShrink: 1 },
 });
+

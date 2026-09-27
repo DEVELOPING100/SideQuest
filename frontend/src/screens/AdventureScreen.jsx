@@ -53,7 +53,7 @@ export default function AdventureScreen() {
         if (cancelled) return;
         setAdventure(full);
         setStops(toScreenStops(full));
-        setCurrentAdventure(full);
+        setCurrentAdventure({ ...full, travel });
       } catch (e) {
         if (!cancelled) setError(e.message || 'Something went wrong.');
       } finally {
@@ -96,7 +96,7 @@ export default function AdventureScreen() {
       </View>}
 
       {ready && <>
-        <AdventureMap stops={stops} />
+        <AdventureMap stops={stops} travel={travel} />
         <View style={styles.card}>
           <Text style={styles.eyebrow}>{vibes.toUpperCase()}</Text>
           <Text accessibilityRole="header" style={styles.title}>{adventure.title}</Text>
@@ -146,3 +146,5 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   primaryPressed: { transform: [{ translateX: 2 }, { translateY: 3 }] }, primaryText: { fontSize: 20, fontWeight: '800', color: C.ink, letterSpacing: -0.5 },
 });
+
+
