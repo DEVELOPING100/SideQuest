@@ -1,16 +1,22 @@
 package com.sidequest.backend.services;
 
 import com.sidequest.backend.models.PlaceOption;
+import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 // Place names and coordinates sourced from OpenStreetMap (c) OpenStreetMap contributors.
-// Descriptions, visit times and costs are team estimates.
+// Fredericton places are hand-picked; other cities come from scripts/fetch-places.ps1.
+// Descriptions, visit times and costs are estimates.
 @Service
 public class PlaceCatalogService {
 
-    private static final List<PlaceOption> DEMO_PLACES = List.of(
+    private static final List<PlaceOption> FREDERICTON = List.of(
         new PlaceOption("p1", "Officers' Square", "park", "Historic square in the downtown Garrison District, an easy starting point for a walk.", 20, 0, 45.9618651, -66.6389938),
         new PlaceOption("p2", "The Green", "park", "Riverside green space downtown, good for a relaxed stroll along the water.", 30, 0, 45.9590199, -66.6417949),
         new PlaceOption("p3", "Odell Park", "nature", "Large wooded park with walking trails, a quiet nature break from downtown.", 60, 0, 45.9530000, -66.6706094),
@@ -32,12 +38,64 @@ public class PlaceCatalogService {
         new PlaceOption("p19", "Quartermain Earth Science Centre", "culture", "Rock, mineral and fossil displays on the UNB campus.", 30, 0, 45.9481625, -66.6423000)
     );
 
+    private static final double NEARBY_KM = 10.0;
+
+    private final List<PlaceOption> allPlaces;
+
+    public PlaceCatalogService() {
+        List<PlaceOption> places = new ArrayList<>(FREDERICTON);
+        places.addAll(loadExtraPlaces());
+        this.allPlaces = List.copyOf(places);
+        System.out.println("Place catalog loaded: " + allPlaces.size() + " places");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<PlaceOption> loadExtraPlaces() {
+        try (InputStream in = PlaceCatalogService.class.getResourceAsStream("/places-extra.json")) {
+            if (in == null) {
+                return List.of();
+            }
+            String text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            if (text.startsWith("\uFEFF")) {
+                text = text.substring(1);
+            }
+            List<Object> raw = JsonParserFactory.getJsonParser().parseList(text);
+            List<PlaceOption> out = new ArrayList<>();
+            for (Object item : raw) {
+                Map<String, Object> m = (Map<String, Object>) item;
+                out.add(new PlaceOption(
+                    (String) m.get("placeId"),
+                    (String) m.get("name"),
+                    (String) m.get("category"),
+                    (String) m.get("description"),
+                    ((Number) m.get("estimatedMinutes")).intValue(),
+                    ((Number) m.get("estimatedCost")).doubleValue(),
+                    ((Number) m.get("lat")).doubleValue(),
+                    ((Number) m.get("lng")).doubleValue()
+                ));
+            }
+            return out;
+        } catch (Exception e) {
+            System.out.println("Could not load extra places: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    // Kept for existing callers: the Fredericton list
     public List<PlaceOption> nearbyPlaces() {
-        return DEMO_PLACES;
+        return FREDERICTON;
+    }
+
+    // Places within NEARBY_KM of the given location; falls back to Fredericton if none are close
+    public List<PlaceOption> nearbyPlaces(double lat, double lng) {
+        List<PlaceOption> near = allPlaces.stream()
+            .filter(p -> distanceKm(lat, lng, p.lat(), p.lng()) <= NEARBY_KM)
+            .toList();
+        return near.size() >= 2 ? near : FREDERICTON;
     }
 
     public String descriptionFor(String placeId) {
-        return DEMO_PLACES.stream()
+        return allPlaces.stream()
             .filter(place -> place.placeId().equals(placeId))
             .map(PlaceOption::description)
             .findFirst()
@@ -46,7 +104,7 @@ public class PlaceCatalogService {
 
     public List<PlaceOption> selectPlaces(List<String> selectedPlaceIds) {
         if (selectedPlaceIds == null || selectedPlaceIds.isEmpty()) {
-            return DEMO_PLACES.subList(0, 2);
+            return FREDERICTON.subList(0, 2);
         }
 
         List<PlaceOption> selected = selectedPlaceIds.stream()
@@ -61,9 +119,18 @@ public class PlaceCatalogService {
     }
 
     private PlaceOption findById(String placeId) {
-        return DEMO_PLACES.stream()
+        return allPlaces.stream()
             .filter(place -> place.placeId().equals(placeId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Unknown placeId: " + placeId));
+    }
+
+    private static double distanceKm(double lat1, double lng1, double lat2, double lng2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+            + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+            * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return 6371.0 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 }

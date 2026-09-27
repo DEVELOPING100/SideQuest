@@ -9,7 +9,9 @@ public record GenerateAdventureRequest(
     BigDecimal budget,
     Integer timeMinutes,
     Integer groupSize,
-    List<String> selectedPlaceIds
+    List<String> selectedPlaceIds,
+    List<String> vibes,
+    String travelMode
 ) {
     public record Location(double lat, double lng) {}
 }
