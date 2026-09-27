@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "SideQuest",
+    "slug": "sidequest",
+    "version": "0.1.0",
+    "scheme": "sidequest",
+    "orientation": "portrait",
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

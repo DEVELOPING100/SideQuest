@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Expo local state and generated native projects
+.expo/
+expo-env.d.ts
+android/
+ios/

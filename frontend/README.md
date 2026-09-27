@@ -1,57 +1,56 @@
-# Sidequest — Frontend
+# SideQuest mobile frontend
 
-## Setup
-```
-npx create-react-app . 
-# or: npm create vite@latest . -- --template react
+React Native + Expo SDK 57 with Expo Router. Vite has been replaced by Metro.
+
+## Run in Expo Go
+
+From this folder:
+
+```sh
 npm install
+npx expo start --go --clear
 ```
 
-## Owners
-- Azeez: input screen + generated-adventure display (`src/screens/InputScreen`, `src/screens/AdventureScreen`)
-- Sotonte: check-in flow + passport gallery (`src/screens/CheckinFlow`, `src/screens/PassportGallery`)
+Use an Expo Go build compatible with SDK 57. Keep your phone and computer on the
+same Wi-Fi network, then scan the terminal QR code. The app opens Person 1’s interactive preferences prototype. “Build my quest”
+validates the form and shows a preview summary; it does not call the backend.
 
-## Build against mock data first — don't wait on the backend
-Copy `../docs/mock-data.json` into `src/mockApi.js` like this, and call these functions from your
-components instead of `fetch` until backend endpoints are live:
+## Structure
 
-```js
-// src/mockApi.js
-import mockData from '../../docs/mock-data.json';
+- `src/app/_layout.jsx`: root navigation stack.
+- `src/app/index.jsx`: preferences route.
+- `src/screens/PreferencesScreen.jsx`: interactive preferences prototype.
+- `src/components/`: future shared UI components.
+- `src/hooks/` and `src/utils/`: future reusable state and validation logic.
+- `src/api.js`: preserved API functions and request/response shapes.
+- `src/assets/hero.png`: preserved existing image.
 
-export async function generateAdventure(timeMinutes, mode, interests) {
-  // swap this for a real fetch('/api/adventures/generate', {...}) once backend is ready
-  return mockData.generateAdventureResponse;
-}
+Keep helpers and screen implementation files outside `src/app`; Router treats files
+inside that folder as routes. Add Person 1 routes only during the later UI step.
 
-export async function checkinStop(adventureId, stopId) {
-  return mockData.checkinResponse;
-}
+## Backend connection (only needed when screens start calling the API)
 
-export async function getAdventure(adventureId) {
-  return mockData.adventureDetailResponse;
-}
+Copy `.env.example` to `.env` and replace its example IP with the computer hosting
+Spring Boot, for example `EXPO_PUBLIC_API_URL=http://192.168.1.20:8080/api`.
+A phone's `localhost` points at the phone, not your computer. The backend must be
+reachable on the local network. Restart Expo after changing environment settings.
+The preferences prototype does not call the backend or require this variable.
+Never put private API keys or Supabase secrets into `EXPO_PUBLIC_*` variables.
 
-export async function getPassport() {
-  return mockData.passportResponse;
-}
+Existing endpoint functions, payloads and error handling are retained. The shared
+check-in/passport helpers have not been developed or migrated as part of Person 1's
+scope. In particular, `checkInAtStop` still uses browser geolocation and needs a
+separate native-location migration by its owner before being used on mobile.
+No check-in, stamp, passport, or completion routes are registered here.
+
+## Verification
+
+```sh
+npm run lint
+npx expo install --check
+npx expo-doctor
+npx expo export --platform ios --platform android
 ```
 
-## Suggested folder layout
-```
-src/
-  screens/
-    InputScreen.jsx
-    AdventureScreen.jsx
-    CheckinFlow.jsx
-    PassportGallery.jsx
-  components/
-    StampBadge.jsx
-    MapView.jsx
-  mockApi.js       # swap for real API calls at integration checkpoints
-  api.js           # real fetch calls, matching docs/api-contract.md
-  App.jsx
-```
-
-When backend endpoints are ready, only `mockApi.js` calls need to be swapped for `api.js` calls —
-component code shouldn't need to change if the response shapes matched the contract.
+The export command checks native JavaScript bundling; testing the QR code in Expo Go
+is still needed to confirm behavior on a physical device.
