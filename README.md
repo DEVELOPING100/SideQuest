@@ -83,11 +83,8 @@ cd SideQuest
 ### Start the backend
 
 ```bash
-cd backend
-./mvnw spring-boot:run
+./backend/run-local.sh
 ```
-
-If the Spring Boot project uses Gradle, run `./gradlew bootRun` instead.
 
 ### Start the frontend
 
@@ -110,10 +107,10 @@ OPENAI_API_KEY=
 PLACES_API_KEY=
 DISTANCE_API_KEY=
 SUPABASE_URL=
-SUPABASE_KEY=
+SUPABASE_SECRET_KEY=
 ```
 
-Keep the real `.env` file in `.gitignore`. Never push API keys to GitHub.
+Keep the real `.env` file in `.gitignore`. Never push API keys to GitHub, and never expose `SUPABASE_SECRET_KEY` in frontend code.
 
 ## GitHub workflow
 

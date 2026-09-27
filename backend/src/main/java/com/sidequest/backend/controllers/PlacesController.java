@@ -1,17 +1,23 @@
 package com.sidequest.backend.controllers;
 
-import com.sidequest.backend.services.PlacesService;
-import org.springframework.web.bind.annotation.*;
-import java.util.*;
+import com.sidequest.backend.models.PlaceOption;
+import com.sidequest.backend.services.PlaceCatalogService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/places")
 public class PlacesController {
 
-    private final PlacesService placesService;
+    private final PlaceCatalogService placeCatalogService;
 
-    public PlacesController(PlacesService placesService) {
-        this.placesService = placesService;
+    public PlacesController(PlaceCatalogService placeCatalogService) {
+        this.placeCatalogService = placeCatalogService;
     }
 
     @GetMapping("/nearby")
@@ -22,6 +28,7 @@ public class PlacesController {
         @RequestParam int timeMinutes,
         @RequestParam(required = false, defaultValue = "1") int groupSize
     ) {
-        return Map.of("places", placesService.getNearbyPlaces(lat, lng, budget, timeMinutes, groupSize));
+        List<PlaceOption> places = placeCatalogService.nearbyPlaces();
+        return Map.of("places", places);
     }
 }

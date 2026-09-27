@@ -1,0 +1,19 @@
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Java build output
+backend/target/
+*.class
+
+# JavaScript dependencies and build output
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
