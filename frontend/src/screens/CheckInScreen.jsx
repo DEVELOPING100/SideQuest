@@ -1,56 +1,131 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { SAMPLE_STOPS } from '../data/sampleAdventure';
+import { checkIn, getAdventure } from '../api';
+import { getCurrentAdventure, setCurrentAdventure, toScreenStops } from '../data/adventureStore';
 
 const C = { paper: '#FFFEFA', ink: '#173E39', deep: '#12322E', lime: '#D6F65B', pale: '#F0F4D5', muted: '#BDD0C9' };
 
 export default function CheckInScreen() {
   const router = useRouter();
-  const [checkedIn, setCheckedIn] = useState(false);
-  const stop = SAMPLE_STOPS[0];
-  function showRoute() {
-    if (router.canGoBack()) router.back();
-    else router.replace('/adventure');
+  const adventure = getCurrentAdventure();
+  const stops = useMemo(() => toScreenStops(adventure), [adventure]);
+  const [completed, setCompleted] = useState(() => new Set(stops.filter(s => s.completed).map(s => s.id)));
+  const [viewIndex, setViewIndex] = useState(() => {
+    const first = stops.findIndex(s => !s.completed);
+    return first === -1 ? Math.max(stops.length - 1, 0) : first;
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [completionConfirmed, setCompletionConfirmed] = useState(false);
+  const pending = useRef(false);
+
+  if (!adventure || stops.length === 0) {
+    return <SafeAreaView style={styles.emptySafe}>
+      <StatusBar style="dark" />
+      <Text style={styles.stopTitle}>No quest yet</Text>
+      <Text style={styles.description}>Build a quest first, then come back here to check in.</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={styles.routeButton}>
+        <Feather name="arrow-left" size={18} color={C.ink} /><Text style={styles.routeText}>Back to preferences</Text>
+      </Pressable>
+    </SafeAreaView>;
   }
+
+  const stop = stops[viewIndex];
+  const isDone = completed.has(stop.id);
+  const isLast = viewIndex === stops.length - 1;
+  const remaining = stops.length - completed.size;
+  const allComplete = stops.every(item => completed.has(item.id));
+
+  async function doCheckIn() {
+    if (pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    setError(null);
+    setCompletionConfirmed(false);
+    try {
+      // Simulated check-in: send the stop's own coordinates so it works anywhere for the demo
+      if (!isDone) {
+        const result = await checkIn(adventure.adventureId, { stopId: stop.stopId, lat: stop.lat, lng: stop.lng });
+        if (result?.success !== true || result.stopId !== stop.stopId) {
+          throw new Error('The backend did not confirm this check-in. Please try again.');
+        }
+      }
+      // Confirm saved flags before offering the stamp, and preserve them on return.
+      const saved = await getAdventure(adventure.adventureId);
+      if (!Array.isArray(saved.stops) || saved.stops.length === 0) {
+        throw new Error('Unable to confirm saved progress. Please try again.');
+      }
+      setCurrentAdventure({ ...saved, travel: adventure.travel });
+      setCompleted(new Set(saved.stops.filter(item => item.completed).map(item => item.stopId)));
+      setCompletionConfirmed(saved.stops.every(item => item.completed === true));
+    } catch (e) {
+      setError(e.message || 'Check-in failed. Try again.');
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  }
+
+  function onPrimary() {
+    if (pending.current) return;
+    if (allComplete && completionConfirmed) {
+      router.push({ pathname: '/stamp-earned', params: { adventureId: adventure.adventureId } });
+    } else if (!isDone || allComplete) doCheckIn();
+    else setViewIndex(stops.findIndex(item => !completed.has(item.id)));
+  }
+
+  function openRoute() {
+    const modes = { walk: 'walking', bike: 'bicycling', drive: 'driving' };
+    const mode = modes[String(adventure.travel || '').toLowerCase()] || 'walking';
+    // No origin given: Google Maps starts from the phone's current location
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}&travelmode=${mode}`;
+    Linking.openURL(url).catch(() => setError('Could not open maps on this phone.'));
+  }
+
+  const primaryLabel = allComplete && completionConfirmed ? 'See my stamp'
+    : allComplete ? 'Confirm saved completion' : !isDone ? 'Check in & collect my stamp' : 'Next stop';
+  const title = isDone ? 'Stop collected!' : 'You made it!';
+  const intro = isDone
+    ? (allComplete && completionConfirmed ? 'Every stop is complete. Your quest stamp is waiting for you.' : `Nice one. ${remaining} ${remaining === 1 ? 'stop' : 'stops'} to go.`)
+    : 'Take a moment to look around, then check in to make this stop officially yours.';
+
   return <SafeAreaView style={styles.safe} edges={['top']}>
     <StatusBar style="light" />
     <SafeAreaView style={styles.body} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <View style={styles.topRow}>
-            <Text style={styles.eyebrow}>STOP 1 OF {SAMPLE_STOPS.length} · FREDERICTON</Text>
-            <View style={styles.demoBadge}><Text style={styles.demoText}>DEMO</Text></View>
+            <Text style={styles.eyebrow}>{`STOP ${viewIndex + 1} OF ${stops.length} \u00b7 FREDERICTON`}</Text>
+            <View style={styles.demoBadge}><Text style={styles.demoText}>SIMULATED</Text></View>
           </View>
-          <Text accessibilityRole="header" style={styles.title}>{checkedIn ? 'A little moment, yours.' : 'You made it!'}</Text>
-          <Text style={styles.intro}>{checkedIn ? 'Your demo check-in is complete. Take a moment to enjoy this little corner of the city.' : 'A little fresh air, a new perspective. Take a moment to look around and make this stop yours.'}</Text>
-          <View style={styles.radar} accessible accessibilityLabel={checkedIn ? 'Demo check-in complete. Location was not verified.' : 'Illustrative proximity display. GPS is not connected.'}>
+          <Text accessibilityRole="header" style={styles.title}>{title}</Text>
+          <Text style={styles.intro}>{intro}</Text>
+          <View style={styles.radar} accessible accessibilityLabel={isDone ? 'Checked in' : 'Ready to check in'}>
             <View style={styles.ringMiddle}><View style={styles.ringInner}><View style={styles.ringCore}>
-              {checkedIn ? <Feather name="check" size={24} color={C.lime} /> : <View style={styles.dot} />}
+              {isDone ? <Feather name="check" size={24} color={C.lime} /> : <View style={styles.dot} />}
             </View></View></View>
-            <View style={styles.distance}><Text style={styles.distanceText}>{checkedIn ? 'Demo check-in complete' : 'Location preview'}</Text></View>
+            <View style={styles.distance}><Text style={styles.distanceText}>{isDone ? 'Checked in' : 'In the check-in zone'}</Text></View>
           </View>
         </View>
         <View style={styles.cardShadow}><View style={styles.card}>
           <Text accessibilityRole="header" style={styles.stopTitle}>{stop.name}</Text>
-          <Text style={styles.description}>Take a photo, share a laugh, or simply enjoy the square. This little moment is yours.</Text>
-          <View style={styles.buttonShadow}><Pressable accessibilityRole="button" accessibilityLabel={checkedIn ? 'Demo check-in complete' : 'Try a demo check-in'} accessibilityState={{ disabled: checkedIn }} disabled={checkedIn} onPress={() => setCheckedIn(true)} style={({ pressed }) => [styles.button, checkedIn && styles.doneButton, pressed && styles.pressed]}>
-            <Text style={styles.buttonText}>{checkedIn ? 'Checked in — demo' : 'Try demo check-in'}</Text><Feather name={checkedIn ? 'check' : 'arrow-right'} size={22} color={C.ink} />
+          <Text style={styles.description}>{stop.description || 'Take a photo, share a laugh, or simply enjoy the moment.'}</Text>
+          <View style={styles.buttonShadow}><Pressable accessibilityRole="button" accessibilityLabel={primaryLabel} disabled={busy} onPress={onPrimary} style={({ pressed }) => [styles.button, isDone && isLast && styles.doneButton, pressed && styles.pressed]}>
+            {busy ? <ActivityIndicator color={C.ink} /> : <><Text style={styles.buttonText}>{primaryLabel}</Text><Feather name={isDone && isLast ? 'award' : 'arrow-right'} size={22} color={C.ink} /></>}
           </Pressable></View>
-          <Text accessibilityLiveRegion="polite" style={styles.note}>{checkedIn ? 'Preview only. Nothing was saved and no stamp was awarded.' : 'Demo only · GPS is not connected. A quest stamp will be earned after all stops are completed.'}</Text>
+          {error && <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>}
+          <Text style={styles.note}>Simulated check-in for the demo: your location is set to this stop. A quest stamp is earned when every stop is done.</Text>
         </View></View>
         <View style={styles.bottom}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Preview quest completion screen, demo only" onPress={() => router.push('/stamp-earned')} style={styles.routeButton}>
-            <Feather name="award" size={18} color={C.ink} /><Text style={styles.routeText}>Preview quest completion</Text>
+          <Pressable accessibilityRole="button" onPress={openRoute} style={({ pressed }) => [styles.routeButton, pressed && { opacity: 0.6 }]}>
+            <Feather name="navigation" size={17} color={C.ink} /><Text style={styles.routeText}>Show me the route</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="View sample passport" onPress={() => router.push('/passport')} style={styles.routeButton}>
-            <Feather name="book-open" size={18} color={C.ink} /><Text style={styles.routeText}>Preview my passport</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={showRoute} style={({ pressed }) => [styles.routeButton, pressed && { opacity: 0.6 }]}>
-            <Feather name="map" size={17} color={C.ink} /><Text style={styles.routeText}>{checkedIn ? 'Back to the adventure' : 'Not yet — show me the map'}</Text>
+          <Pressable accessibilityRole="button" onPress={() => (router.canGoBack() ? router.back() : router.replace('/adventure'))} style={({ pressed }) => [styles.routeButton, pressed && { opacity: 0.6 }]}>
+            <Feather name="map" size={17} color={C.ink} /><Text style={styles.routeText}>Back to the adventure</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -59,6 +134,7 @@ export default function CheckInScreen() {
 }
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.deep }, body: { flex: 1, backgroundColor: C.paper }, content: { flexGrow: 1 },
+  emptySafe: { flex: 1, backgroundColor: C.paper, padding: 24, justifyContent: 'center', gap: 12 },
   hero: { backgroundColor: C.ink, paddingHorizontal: 24, paddingTop: 25, paddingBottom: 55 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
   eyebrow: { color: C.lime, fontSize: 10, letterSpacing: 1.2, flexShrink: 1, lineHeight: 16 },
@@ -79,7 +155,9 @@ const styles = StyleSheet.create({
   button: { borderWidth: 1.8, borderColor: C.deep, backgroundColor: C.lime, borderRadius: 22, minHeight: 64, paddingHorizontal: 14, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   buttonText: { color: C.ink, fontSize: 17, fontWeight: '800', flexShrink: 1, textAlign: 'center' },
   doneButton: { backgroundColor: C.pale }, pressed: { transform: [{ translateX: 2 }, { translateY: 3 }] },
+  error: { color: '#B3261E', fontSize: 13, lineHeight: 18, marginTop: 12 },
   note: { color: '#6B817B', fontSize: 11, lineHeight: 16, marginTop: 15 },
   bottom: { flex: 1, minHeight: 100, justifyContent: 'flex-end', alignItems: 'center', paddingVertical: 22, paddingHorizontal: 24 },
   routeButton: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 44, padding: 10 }, routeText: { fontSize: 14, color: C.ink, flexShrink: 1 },
 });
+

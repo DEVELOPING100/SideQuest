@@ -1,0 +1,38 @@
+{
+  "adventureId": "8e7b0168-fad2-4a2f-9420-4a9ee2372dc2",
+  "title": "Officers' Square to Gallery 78",
+  "mode": "ai",
+  "totalEstimatedMinutes": 90,
+  "stops": [
+    {
+      "stopId": "fc7f9b0b-5767-4306-b365-38b3e20de1fb",
+      "name": "Officers' Square",
+      "category": "park",
+      "description": "Historic square in the downtown Garrison District, an easy starting point for a walk.",
+      "estimatedMinutes": 20,
+      "lat": 45.9618651,
+      "lng": -66.6389938,
+      "order": 1
+    },
+    {
+      "stopId": "2122cebc-a509-4f14-aae1-a80b72529e6c",
+      "name": "Molly's",
+      "category": "food",
+      "description": "Cafe right by Officers' Square, handy in the middle of a downtown walk.",
+      "estimatedMinutes": 30,
+      "lat": 45.9614435,
+      "lng": -66.639853,
+      "order": 2
+    },
+    {
+      "stopId": "7662f429-50b1-41d0-bb79-c39a60a51069",
+      "name": "Gallery 78",
+      "category": "art",
+      "description": "Art gallery showing local and regional artists.",
+      "estimatedMinutes": 30,
+      "lat": 45.958687,
+      "lng": -66.6349701,
+      "order": 3
+    }
+  ]
+}
