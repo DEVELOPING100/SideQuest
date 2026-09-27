@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Feather from '@expo/vector-icons/Feather';
@@ -19,6 +20,7 @@ function Choice({ label, selected, onPress, style, children }) {
 }
 
 export default function PreferencesScreen() {
+  const router = useRouter();
   const [time, setTime] = useState(90);
   const [customTime, setCustomTime] = useState('');
   const [budget, setBudget] = useState('25');
@@ -43,9 +45,10 @@ export default function PreferencesScreen() {
     if (!budget.trim() || !/^\d+(\.\d{1,2})?$/.test(budget.trim()) || !Number.isFinite(dollars)) next.budget = 'Enter a budget of $0 or more, with up to two decimal places.';
     setErrors(next);
     if (Object.keys(next).length) return;
-    Alert.alert('Your quest preferences',
-      `Fredericton, NB\n${minutes} minutes · $${dollars.toFixed(2)} CAD total · ${groupSize} ${groupSize === 1 ? 'person' : 'people'}\n${vibes.length ? vibes.join(' + ') : 'Open to any vibe'} · ${travel}\n\nThis is a design preview. No adventure has been generated yet.`,
-      [{ text: 'Keep exploring', style: 'cancel' }]);
+    router.push({ pathname: '/adventure', params: {
+      minutes: String(minutes), budget: String(dollars), groupSize: String(groupSize),
+      vibes: vibes.join(' + '), travel,
+    } });
   }
 
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -56,7 +59,7 @@ export default function PreferencesScreen() {
           <View style={styles.logo}><Feather name="zap" size={23} color={C.ink} /></View>
           <Text style={styles.brandName}>SideQuest</Text>
         </View>
-        <View style={styles.cityBadge}><Feather name="compass" size={21} color={C.ink} /></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open sample passport" onPress={() => router.push('/passport')} style={styles.cityBadge}><Feather name="book-open" size={21} color={C.ink} /></Pressable>
       </View>
       <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.location}>
@@ -102,7 +105,7 @@ export default function PreferencesScreen() {
       </ScrollView>
       <View style={styles.footer}>
         <View style={styles.buttonShadow}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Build my quest, preview preferences" onPress={previewQuest} style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryPressed]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Build my quest, preview sample adventure" onPress={previewQuest} style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryPressed]}>
             <Text style={styles.primaryText}>Build my quest</Text><Feather name="arrow-right" size={23} color={C.ink} />
           </Pressable>
         </View>
