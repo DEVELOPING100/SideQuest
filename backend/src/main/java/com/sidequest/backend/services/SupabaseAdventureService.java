@@ -93,7 +93,7 @@ public class SupabaseAdventureService {
         requireConfigured();
         JsonNode adventures = get(
             "adventures?id=eq." + adventureId
-                + "&select=id,title,total_estimated_minutes"
+                + "&select=id,title,total_estimated_minutes,mode"
         );
         if (!adventures.isArray() || adventures.isEmpty()) {
             throw new IllegalArgumentException("Adventure not found: " + adventureId);
@@ -127,7 +127,7 @@ public class SupabaseAdventureService {
         return new AdventureDetailsResponse(
             adventureId,
             adventure.path("title").asString(),
-            "manual",
+            normalizedMode(adventure.path("mode").asString()),
             adventure.path("total_estimated_minutes").asInt(),
             List.copyOf(stops)
         );
@@ -179,7 +179,7 @@ public class SupabaseAdventureService {
         requireConfigured();
         JsonNode savedStamps = get(
             "stamps?user_id=eq." + DEMO_USER_ID
-                + "&select=id,adventure_id,title,earned_at,stop_count"
+                + "&select=id,adventure_id,title,earned_at,stop_count,mode"
                 + "&order=earned_at.desc"
         );
 
@@ -189,7 +189,7 @@ public class SupabaseAdventureService {
                 UUID.fromString(stamp.path("id").asString()),
                 UUID.fromString(stamp.path("adventure_id").asString()),
                 stamp.path("title").asString(),
-                "manual",
+                normalizedMode(stamp.path("mode").asString()),
                 stamp.path("earned_at").asString(),
                 stamp.path("stop_count").asInt()
             ));
@@ -215,7 +215,7 @@ public class SupabaseAdventureService {
         adventure.put("travel_mode", "walking");
         adventure.put("interests", places.stream().map(PlaceOption::category).distinct().toList());
         adventure.put("total_estimated_minutes", totalMinutes);
-        adventure.put("status", "planned");
+        adventure.put("status", "planned"); adventure.put("mode", normalizedMode(request.mode()));
 
         post("adventures", adventure);
     }
@@ -312,7 +312,7 @@ public class SupabaseAdventureService {
         }
 
         JsonNode adventures = get(
-            "adventures?id=eq." + adventureId + "&select=title&limit=1"
+            "adventures?id=eq." + adventureId + "&select=title,mode&limit=1"
         );
         if (adventures.isEmpty()) {
             throw new IllegalStateException("Adventure disappeared before stamp creation");
@@ -323,7 +323,7 @@ public class SupabaseAdventureService {
             "user_id", DEMO_USER_ID,
             "adventure_id", adventureId,
             "title", adventures.get(0).path("title").asString(),
-            "stop_count", stopCount
+            "stop_count", stopCount, "mode", normalizedMode(adventures.get(0).path("mode").asString())
         ));
     }
 
@@ -403,4 +403,5 @@ public class SupabaseAdventureService {
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }
+
 
