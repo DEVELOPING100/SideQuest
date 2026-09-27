@@ -6,6 +6,7 @@ import com.sidequest.backend.models.PlaceOption;
 import com.sidequest.backend.models.RoutePlan;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -36,6 +37,7 @@ public class AdventureService {
         validate(request);
 
         String mode = request.mode() == null ? "manual" : request.mode();
+        String travel = routingMode(request.travelMode());
         List<String> placeIds = request.selectedPlaceIds();
 
         if (mode.equals("ai")) {
@@ -43,13 +45,37 @@ public class AdventureService {
                 placeCatalogService.nearbyPlaces(),
                 request.budget(),
                 request.timeMinutes(),
-                request.groupSize()
+                request.groupSize(),
+                request.vibes(),
+                travel
             );
         }
 
-        List<PlaceOption> places = placeCatalogService.selectPlaces(placeIds);
-        RoutePlan routePlan = routingService.calculate(places, "walking");
+        List<PlaceOption> places = new ArrayList<>(placeCatalogService.selectPlaces(placeIds));
+        RoutePlan routePlan = routingService.calculate(places, travel);
+
+        // AI mode: drop stops from the end until the quest fits the user's time (keep at least 2)
+        if (mode.equals("ai")) {
+            while (places.size() > 2 && totalMinutes(places, routePlan) > request.timeMinutes()) {
+                places = new ArrayList<>(places.subList(0, places.size() - 1));
+                routePlan = routingService.calculate(places, travel);
+            }
+        }
+
         return supabaseAdventureService.save(request, places, routePlan);
+    }
+
+    // Map the app's "Walk" / "Bike" / "Drive" to a routing mode
+    private String routingMode(String travelMode) {
+        if (travelMode == null) return "walking";
+        String t = travelMode.toLowerCase();
+        if (t.startsWith("bike") || t.startsWith("cycl")) return "biking";
+        if (t.startsWith("drive") || t.startsWith("car")) return "driving";
+        return "walking";
+    }
+
+    private int totalMinutes(List<PlaceOption> places, RoutePlan routePlan) {
+        return places.stream().mapToInt(PlaceOption::estimatedMinutes).sum() + routePlan.totalTravelMinutes();
     }
 
     private void validate(GenerateAdventureRequest request) {
