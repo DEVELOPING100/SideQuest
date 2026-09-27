@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react'   
 import mockData from '../../../docs/mock-data.json'//
 import Stamp from '../components/Stamp.jsx'
+import { checkInAtStop } from '../api.js'
 
 export default function CheckinFlow({ adventure = mockData.generateAdventureResponse }) {
   // Start with a newly generated adventure: none of its stops are completed yet.
@@ -28,16 +29,8 @@ export default function CheckinFlow({ adventure = mockData.generateAdventureResp
 
     try {
       const adventureId = adventure.adventureId
-      const response = await fetch(`/api/adventures/${encodeURIComponent(adventureId)}/checkin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // Use this stop's coordinates until browser GPS is connected.
-        body: JSON.stringify({ stopId, lat: stop.lat, lng: stop.lng }),
-      })
-      const data = await response.json().catch(() => null)
-      if (!response.ok) {
-        throw new Error(data?.error || `Check-in failed (HTTP ${response.status}).`)
-      }
+      // Demo check-ins use the returned stop coordinates without requesting GPS.
+      const data = await checkInAtStop(adventureId, stop, { useGps: false })
       if (data?.success !== true || data.stopId !== stopId) {
         throw new Error('The server did not confirm this stop\'s check-in.')
       }
