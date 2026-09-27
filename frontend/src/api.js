@@ -1,4 +1,4 @@
-﻿// SideQuest API client
+// SideQuest API client
 // Screens should call these functions instead of importing mock-data.json.
 // Native apps need an absolute API URL; there is no Vite proxy.
 // Set this to your computer's LAN address when testing on a phone.
@@ -38,11 +38,15 @@ export function generateAdventure({ mode, lat, lng, budget, timeMinutes, groupSi
     method: 'POST',
     body: JSON.stringify({
       mode,
-      location: { lat, lng }, vibes, travelMode,
+      location: { lat, lng },
       budget,
       timeMinutes,
       groupSize,
       selectedPlaceIds: mode === 'manual' ? selectedPlaceIds : undefined,
+      // Sent faithfully from Preferences; the current backend must add support
+      // before these fields affect generation (it currently forces walking).
+      vibes,
+      travelMode,
     }),
   });
 }

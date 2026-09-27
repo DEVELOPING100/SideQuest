@@ -6,7 +6,15 @@
     "scheme": "sidequest",
     "orientation": "portrait",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow SideQuest to take photos for your adventure memories.",
+          "photosPermission": "Allow SideQuest to choose photos for your adventure memories.",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

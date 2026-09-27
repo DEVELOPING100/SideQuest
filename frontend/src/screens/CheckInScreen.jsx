@@ -4,10 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import Motion from '../components/Motion';
+import PhotoMemoryPicker from '../components/PhotoMemoryPicker';
 import { checkIn, getAdventure } from '../api';
 import { getCurrentAdventure, setCurrentAdventure, toScreenStops } from '../data/adventureStore';
 
-const C = { paper: '#FFFEFA', ink: '#173E39', deep: '#12322E', lime: '#D6F65B', pale: '#F0F4D5', muted: '#BDD0C9' };
+const C = { paper: '#FFFDFA', ink: '#173E39', deep: '#12322E', lime: '#D1FF4A', pale: '#F0F4D5', muted: '#BDD0C9' };
 
 export default function CheckInScreen() {
   const router = useRouter();
@@ -59,7 +61,7 @@ export default function CheckInScreen() {
       if (!Array.isArray(saved.stops) || saved.stops.length === 0) {
         throw new Error('Unable to confirm saved progress. Please try again.');
       }
-      setCurrentAdventure({ ...saved, travel: adventure.travel });
+      setCurrentAdventure({ ...saved, travel: adventure.travel, preferences: adventure.preferences });
       setCompleted(new Set(saved.stops.filter(item => item.completed).map(item => item.stopId)));
       setCompletionConfirmed(saved.stops.every(item => item.completed === true));
     } catch (e) {
@@ -87,7 +89,7 @@ export default function CheckInScreen() {
   }
 
   const primaryLabel = allComplete && completionConfirmed ? 'See my stamp'
-    : allComplete ? 'Confirm saved completion' : !isDone ? 'Check in & collect my stamp' : 'Next stop';
+    : allComplete ? 'Confirm saved completion' : !isDone ? 'Check in at this stop' : 'Next stop';
   const title = isDone ? 'Stop collected!' : 'You made it!';
   const intro = isDone
     ? (allComplete && completionConfirmed ? 'Every stop is complete. Your quest stamp is waiting for you.' : `Nice one. ${remaining} ${remaining === 1 ? 'stop' : 'stops'} to go.`)
@@ -99,21 +101,22 @@ export default function CheckInScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <View style={styles.topRow}>
-            <Text style={styles.eyebrow}>{`STOP ${viewIndex + 1} OF ${stops.length} \u00b7 FREDERICTON`}</Text>
+            <Text style={styles.eyebrow}>{`STOP ${viewIndex + 1} OF ${stops.length} \u00b7 ${(adventure.preferences?.city || 'Fredericton').toUpperCase()}`}</Text>
             <View style={styles.demoBadge}><Text style={styles.demoText}>SIMULATED</Text></View>
           </View>
           <Text accessibilityRole="header" style={styles.title}>{title}</Text>
           <Text style={styles.intro}>{intro}</Text>
           <View style={styles.radar} accessible accessibilityLabel={isDone ? 'Checked in' : 'Ready to check in'}>
             <View style={styles.ringMiddle}><View style={styles.ringInner}><View style={styles.ringCore}>
-              {isDone ? <Feather name="check" size={24} color={C.lime} /> : <View style={styles.dot} />}
+              {isDone ? <Feather name="check" size={24} color={C.lime} /> : <Motion pulse style={styles.dot} />}
             </View></View></View>
-            <View style={styles.distance}><Text style={styles.distanceText}>{isDone ? 'Checked in' : 'In the check-in zone'}</Text></View>
+            <View style={styles.distance}><Text style={styles.distanceText}>{isDone ? 'Checked in' : 'Demo check-in'}</Text></View>
           </View>
         </View>
         <View style={styles.cardShadow}><View style={styles.card}>
           <Text accessibilityRole="header" style={styles.stopTitle}>{stop.name}</Text>
           <Text style={styles.description}>{stop.description || 'Take a photo, share a laugh, or simply enjoy the moment.'}</Text>
+          <PhotoMemoryPicker key={`${adventure.adventureId}:${stop.stopId}`} adventureId={adventure.adventureId} stopId={stop.stopId} title={stop.name} />
           <View style={styles.buttonShadow}><Pressable accessibilityRole="button" accessibilityLabel={primaryLabel} disabled={busy} onPress={onPrimary} style={({ pressed }) => [styles.button, isDone && isLast && styles.doneButton, pressed && styles.pressed]}>
             {busy ? <ActivityIndicator color={C.ink} /> : <><Text style={styles.buttonText}>{primaryLabel}</Text><Feather name={isDone && isLast ? 'award' : 'arrow-right'} size={22} color={C.ink} /></>}
           </Pressable></View>
@@ -135,7 +138,7 @@ export default function CheckInScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.deep }, body: { flex: 1, backgroundColor: C.paper }, content: { flexGrow: 1 },
   emptySafe: { flex: 1, backgroundColor: C.paper, padding: 24, justifyContent: 'center', gap: 12 },
-  hero: { backgroundColor: C.ink, paddingHorizontal: 24, paddingTop: 25, paddingBottom: 55 },
+  hero: { backgroundColor: C.ink, paddingHorizontal: 24, paddingTop: 32, paddingBottom: 55 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
   eyebrow: { color: C.lime, fontSize: 10, letterSpacing: 1.2, flexShrink: 1, lineHeight: 16 },
   demoBadge: { borderWidth: 1, borderColor: '#62866B', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 5 }, demoText: { fontSize: 9, letterSpacing: 1, color: C.lime },
@@ -147,12 +150,12 @@ const styles = StyleSheet.create({
   ringCore: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#496C40', alignItems: 'center', justifyContent: 'center' },
   dot: { width: 16, height: 16, borderRadius: 8, backgroundColor: C.lime },
   distance: { position: 'absolute', bottom: 30, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 22, backgroundColor: C.lime }, distanceText: { color: C.deep, fontSize: 12, fontWeight: '500' },
-  cardShadow: { marginTop: -30, marginHorizontal: 24, backgroundColor: C.pale, borderRadius: 25, paddingBottom: 7, paddingRight: 5 },
-  card: { backgroundColor: C.paper, borderWidth: 1.8, borderColor: C.deep, borderRadius: 24, padding: 20 },
+  cardShadow: { marginTop: -30, marginHorizontal: 24, borderRadius: 26, shadowColor: C.deep, shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 10 } },
+  card: { backgroundColor: C.paper, borderWidth: 1, borderColor: '#D5DEDA', borderRadius: 26, padding: 22 },
   stopTitle: { color: C.ink, fontSize: 27, fontWeight: '800', letterSpacing: -0.8, marginBottom: 11 },
   description: { color: '#6B817B', fontSize: 14, lineHeight: 21, marginBottom: 21 },
-  buttonShadow: { backgroundColor: C.deep, paddingRight: 4, paddingBottom: 5, borderRadius: 23 },
-  button: { borderWidth: 1.8, borderColor: C.deep, backgroundColor: C.lime, borderRadius: 22, minHeight: 64, paddingHorizontal: 14, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
+  buttonShadow: { borderRadius: 23 },
+  button: { backgroundColor: C.lime, borderRadius: 23, minHeight: 64, paddingHorizontal: 14, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   buttonText: { color: C.ink, fontSize: 17, fontWeight: '800', flexShrink: 1, textAlign: 'center' },
   doneButton: { backgroundColor: C.pale }, pressed: { transform: [{ translateX: 2 }, { translateY: 3 }] },
   error: { color: '#B3261E', fontSize: 13, lineHeight: 18, marginTop: 12 },

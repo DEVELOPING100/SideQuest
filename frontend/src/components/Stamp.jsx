@@ -1,12 +1,34 @@
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 
 // Display only: this component never creates or saves a stamp.
-export default function Stamp({ title, stopCount, earnedAt }) {
+export default function Stamp({ title, stopCount, earnedAt, compact = false, scrapbook = false, index = 0 }) {
+  const [cardWidth, setCardWidth] = useState(120);
+  const diameter = Math.min(142, cardWidth - 8);
+  const ink = scrapbook && index % 4 === 1 ? '#F3735E' : '#173E39';
   const date = earnedAt ? new Date(earnedAt) : null;
   const dateLabel = date && !Number.isNaN(date.getTime())
     ? date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
     : 'Date unavailable';
+
+  const tint = ['#E5F5EF', '#FFF0E9', '#F1F7D6', '#EEEAF8'][index % 4];
+  if (compact) return (
+    <View onLayout={event => setCardWidth(event.nativeEvent.layout.width)} style={[compactStyles.card, scrapbook && { marginTop: index % 2 ? 34 : 8, marginBottom: 22 }]} accessibilityLabel={`${title}, ${stopCount} stops completed, ${dateLabel}`}>
+      <View style={[compactStyles.shadow, { width: diameter, height: diameter, backgroundColor: ['#BEE5DB', '#FFD2C8', '#DBEBA4', '#DCCDEB'][index % 4] }]}>
+        <View style={[compactStyles.seal, { borderColor: ink, backgroundColor: tint, transform: [{ rotate: index % 2 ? '7deg' : '-7deg' }] }]}>
+          <View style={compactStyles.tape} />
+          <View style={[compactStyles.inner, { borderColor: ink }]}>
+            <Text numberOfLines={2} style={[compactStyles.label, { color: ink }]}>{title.toUpperCase()}</Text>
+            <Feather name={['wind', 'coffee', 'feather', 'heart'][index % 4]} size={22} color={ink} />
+            <Text style={[compactStyles.date, { color: ink }]}>{dateLabel}</Text>
+          </View>
+        </View>
+      </View>
+      <Text style={compactStyles.title}>{title}</Text>
+      <Text style={compactStyles.details}>{stopCount} {stopCount === 1 ? 'stop' : 'stops'} completed</Text>
+    </View>
+  );
 
   return (
     <View style={styles.card}>
@@ -33,4 +55,14 @@ const styles = StyleSheet.create({
   title: { color: '#173E39', fontSize: 19, fontWeight: '700', textAlign: 'center', marginTop: 8 },
   details: { color: '#173E39', fontSize: 14, textAlign: 'center' },
   date: { color: '#6B817B', fontSize: 12, textAlign: 'center' },
+});
+
+const compactStyles = StyleSheet.create({
+  card: { width: '47%', alignItems: 'center', marginVertical: 14 },
+  shadow: { borderRadius: 100, paddingRight: 4, paddingBottom: 4 },
+  seal: { width: '100%', height: '100%', borderRadius: 100, borderWidth: 1, borderColor: '#173E39', padding: 12 },
+  inner: { flex: 1, borderWidth: 1, borderColor: '#173E39', borderRadius: 100, alignItems: 'center', justifyContent: 'space-evenly', padding: 7 },
+  tape: { position: 'absolute', width: 34, height: 12, alignSelf: 'center', top: -7, backgroundColor: '#D1FF4A88' },
+  label: { color: '#173E39', fontSize: 8, letterSpacing: 0.5, textAlign: 'center' }, date: { color: '#173E39', fontSize: 8, textAlign: 'center' },
+  title: { color: '#173E39', fontSize: 12, fontWeight: '600', textAlign: 'center', lineHeight: 17, marginTop: 12 }, details: { color: '#6B817B', fontSize: 10, textAlign: 'center', marginTop: 4 },
 });
