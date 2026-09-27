@@ -57,7 +57,7 @@ public class SupabaseAdventureService {
         int activityMinutes = places.stream().mapToInt(PlaceOption::estimatedMinutes).sum();
         int totalMinutes = activityMinutes + routePlan.totalTravelMinutes();
 
-        insertAdventure(adventureId, request, places, totalMinutes);
+        String title = buildTitle(places); insertAdventure(title, adventureId, request, places, totalMinutes);
         try {
             insertStops(adventureId, stopIds, places, routePlan);
         } catch (RuntimeException error) {
@@ -82,7 +82,7 @@ public class SupabaseAdventureService {
 
         return new AdventureResponse(
             adventureId,
-            "A Chill Riverside Afternoon",
+            title,
             normalizedMode(request.mode()),
             totalMinutes,
             List.copyOf(responseStops)
@@ -198,7 +198,7 @@ public class SupabaseAdventureService {
         return new PassportResponse(DEMO_USER_ID, List.copyOf(stamps));
     }
 
-    private void insertAdventure(
+    private void insertAdventure(String title,
         UUID adventureId,
         GenerateAdventureRequest request,
         List<PlaceOption> places,
@@ -207,7 +207,7 @@ public class SupabaseAdventureService {
         Map<String, Object> adventure = new LinkedHashMap<>();
         adventure.put("id", adventureId);
         adventure.put("user_id", DEMO_USER_ID);
-        adventure.put("title", "A Chill Riverside Afternoon");
+        adventure.put("title", title);
         adventure.put("location_name", locationName(request.location()));
         adventure.put("budget", request.budget() == null ? BigDecimal.ZERO : request.budget());
         adventure.put("time_minutes", request.timeMinutes() == null ? totalMinutes : request.timeMinutes());
@@ -371,6 +371,18 @@ public class SupabaseAdventureService {
         return "%.4f, %.4f".formatted(location.lat(), location.lng());
     }
 
+    private String buildTitle(List<PlaceOption> places) {
+        if (places == null || places.isEmpty()) {
+            return "A Local Adventure";
+        }
+        String first = places.get(0).name();
+        String last = places.get(places.size() - 1).name();
+        if (places.size() == 2) {
+            return first + " & " + last;
+        }
+        return first + " to " + last;
+    }
+
     private String normalizedMode(String mode) {
         return mode == null || mode.isBlank() ? "manual" : mode;
     }
@@ -391,3 +403,4 @@ public class SupabaseAdventureService {
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }
+
