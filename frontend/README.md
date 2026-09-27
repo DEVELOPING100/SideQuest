@@ -13,7 +13,7 @@ npx expo start --go --clear
 
 Use an Expo Go build compatible with SDK 57. Keep your phone and computer on the
 same Wi-Fi network, then scan the terminal QR code. The app opens Person 1’s interactive preferences prototype. “Build my quest”
-validates the form and shows a preview summary; it does not call the backend.
+validates the form and opens a sample adventure overview; it does not call the backend.
 
 ## Structure
 
@@ -41,7 +41,7 @@ Existing endpoint functions, payloads and error handling are retained. The share
 check-in/passport helpers have not been developed or migrated as part of Person 1's
 scope. In particular, `checkInAtStop` still uses browser geolocation and needs a
 separate native-location migration by its owner before being used on mobile.
-No check-in, stamp, passport, or completion routes are registered here.
+Check-in and passport routes are UI demos only; shared backend helpers are not called by them.
 
 ## Verification
 
@@ -54,3 +54,28 @@ npx expo export --platform ios --platform android
 
 The export command checks native JavaScript bundling; testing the QR code in Expo Go
 is still needed to confirm behavior on a physical device.
+
+## Map preview
+
+The overview uses `react-native-maps` (Apple Maps on iOS, Google Maps on Android).
+Expo Go needs no additional map-key configuration. Standalone Google Maps builds
+need provider credentials before release.
+
+`src/data/sampleAdventure.js` contains three sample locations from the shared
+project catalog. The map and list use the same data. Pinch/drag the map, tap a
+numbered marker for its name, or use the expand button to fit all stops.
+No location permission is requested. No routing, directions, live place lookup,
+opening-hours verification, or preference matching is implemented yet.
+Map tiles require an internet connection. The stop list stays visible without tiles.
+
+After installing native dependencies, restart Metro with `npx expo start --go --clear`.
+
+## Passport preview
+
+Open the book icon on Preferences or “Preview my passport” on Check-in.
+The passport uses fictional sample quests from `src/data/samplePassport.js`; totals
+are calculated from that collection. Tap a stamp for sample details. “Keep exploring”
+returns to Preferences. No check-in creates a stamp or writes to the backend.
+The stamp-earned screen is available from “Preview quest completion” on Check-in.
+It uses the same sample River walk quest as the passport. It does not award a stamp
+or change progress; live completion and passport integration remain to be built.
