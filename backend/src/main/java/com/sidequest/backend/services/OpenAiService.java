@@ -34,11 +34,11 @@ public class OpenAiService {
                     .append(", category=").append(p.category())
                     .append(", minutes=").append(p.estimatedMinutes())
                     .append(", cost=$").append(p.estimatedCost())
-                    .append(", about=").append(p.description())
+                    .append(", lat=").append(p.lat()).append(", lng=").append(p.lng()).append(", about=").append(p.description())
                     .append("\n");
             }
 
-            String systemPrompt = "You are a local adventure planner. Pick 2 to 4 places from the list that fit the user's budget, time and group size, and order them logically. Total minutes must not exceed the time available and total cost must not exceed the budget. Respond ONLY with JSON: {\"orderedPlaceIds\": [\"p1\", \"p2\"]}";
+            String systemPrompt = "You are a local adventure planner. Pick 2 to 4 places from the list that fit the user's budget, time and group size, and order them logically. Prefer places close together so the route is walkable, and include a mix of categories. Total minutes must not exceed the time available and total cost must not exceed the budget. Respond ONLY with JSON: {\"orderedPlaceIds\": [\"p1\", \"p2\"]}";
             String userPrompt = "Places:\n" + list
                 + "\nBudget: " + (budget == null ? "no limit" : "$" + budget)
                 + "\nTime available: " + timeMinutes + " minutes"
@@ -81,3 +81,4 @@ public class OpenAiService {
         }
     }
 }
+
