@@ -5,7 +5,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import AdventureMap from '../components/AdventureMap';
+import AdventureEditor from '../components/AdventureEditor';
 import { getAdventure } from '../api';
+import { loadPlanningNotes } from '../data/planningNotes';
 import { getCurrentAdventure, setCurrentAdventure, toScreenStops } from '../data/adventureStore';
 
 const C = { paper: '#FFFDFA', ink: '#173E39', lime: '#D1FF4A', pale: '#F0F4D5', muted: '#6B817B', line: '#D9E0D6', shadow: '#12322E' };
@@ -27,9 +29,13 @@ export default function AdventureScreen() {
 
   const [adventure, setAdventure] = useState(null);
   const [stops, setStops] = useState([]);
+  const [notes, setNotes] = useState([]);
+  const [editorUnavailableId, setEditorUnavailableId] = useState(null);
+  const [notesError, setNotesError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
+
 
   useFocusEffect(useCallback(() => {
     let cancelled = false;
@@ -50,6 +56,14 @@ export default function AdventureScreen() {
         if (cancelled) return;
         setAdventure(full);
         setStops(toScreenStops(full));
+        // Optional phone notes must not prevent loading the real adventure.
+        let savedNotes = [];
+        let notesFailed = false;
+        try { savedNotes = await loadPlanningNotes(id); }
+        catch { notesFailed = true; }
+        if (cancelled) return;
+        setNotes(savedNotes);
+        setNotesError(notesFailed);
         setCurrentAdventure({ ...full, travel, preferences: cached?.adventureId === id ? cached.preferences : undefined });
       } catch (e) {
         if (!cancelled) setError(e.message || 'Something went wrong.');
@@ -69,6 +83,21 @@ export default function AdventureScreen() {
   }
 
   const ready = !loading && !error && adventure;
+  const canEdit = ready && stops.length > 0 && !stops.some(stop => stop.completed);
+
+  function saveRevisedQuest(revised) {
+    const preferences = { city, startingLocation, minutes, budget, groupSize: group, vibes, travel };
+    setCurrentAdventure({ ...revised, travel, preferences });
+    setAdventure(revised);
+    setStops(toScreenStops(revised));
+
+    router.setParams({ adventureId: revised.adventureId });
+  }
+
+  if (canEdit && editorUnavailableId !== adventure.adventureId) return <AdventureEditor key={adventure.adventureId} adventure={adventure}
+    preferences={{ city, startingLocation, minutes, budget, groupSize: group, vibes }} travel={travel}
+    onUnavailable={() => setEditorUnavailableId(adventure.adventureId)}
+    onClose={goBack} onSaved={revised => { saveRevisedQuest(revised); router.push('/check-in'); }} />;
 
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <StatusBar style="dark" />
@@ -107,6 +136,17 @@ export default function AdventureScreen() {
             <View style={styles.stopCopy}><Text style={[styles.stopName, stop.completed && styles.completed]}>{stop.name}</Text><Text style={styles.stopDetail}>{stop.completed ? 'Done · Check-in saved' : stop.detail}</Text></View>
             <Text style={styles.duration}>{stop.minutes} min</Text>
           </View>)}
+          {canEdit ? <>
+            <Text style={styles.mode}>Activity editing is unavailable for this quest. Your saved route is unchanged and ready to explore.</Text>
+            <Pressable accessibilityRole="button" onPress={() => setEditorUnavailableId(null)} style={styles.editButton}><Text style={styles.retryText}>Retry activity editor</Text></Pressable>
+          </> : <Text style={styles.mode}>This quest has started. Plan a new quest to change its activities.</Text>}
+          {notesError && <Text style={styles.mode}>Local notes could not be loaded. Your saved stops are still available.</Text>}
+          {notes.map(note => <View key={note.placeId} style={styles.stop}>
+            <View style={styles.stopCopy}><Text style={styles.stopName}>{note.name}</Text>
+              <Text style={styles.stopDetail}>Local planning note · planned position {note.position + 1} · {note.estimatedMinutes} min</Text>
+              {!!note.description && <Text style={styles.stopDetail}>{note.description}</Text>}
+            </View>
+          </View>)}
           <Text style={styles.mode}>{`${city} \u00b7 ${travel} selected`}</Text>
           {favorite && <Text accessibilityLiveRegion="polite" style={styles.favoriteNote}>Saved to favorites for this session.</Text>}
         </View>
@@ -118,6 +158,7 @@ export default function AdventureScreen() {
   </SafeAreaView>;
 }
 const styles = StyleSheet.create({
+  editButton: { marginTop: 18, padding: 16, minHeight: 50, alignItems: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: '#9BAD80', borderRadius: 18, backgroundColor: C.pale },
   completed: { textDecorationLine: 'line-through', color: C.muted },
   locationPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#EFF2ED', padding: 9, borderRadius: 10, marginTop: 16 }, locationText: { fontSize: 10, color: C.ink, fontWeight: '600' },
   safe: { flex: 1, backgroundColor: C.paper }, flex: { flex: 1 }, content: { paddingBottom: 16 },

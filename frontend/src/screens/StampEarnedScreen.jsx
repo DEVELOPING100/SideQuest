@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +11,8 @@ const C = { paper: '#FFFDFA', ink: '#173E39', lime: '#D1FF4A', pale: '#F0F4D5', 
 
 export default function StampEarnedScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const stampSize = Math.min(270, (width - 52) * 0.85);
   const { adventureId } = useLocalSearchParams();
   const [stamp, setStamp] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ export default function StampEarnedScreen() {
       <Text style={styles.eyebrow}>QUEST STAMP EARNED</Text>
       <Text accessibilityRole="header" style={styles.title}>Nice one, explorer!</Text>
       <Text style={styles.description}>{stamp.title}</Text>
-      <Motion style={styles.stampArea} accessible accessibilityLabel={`Earned ${stamp.title} quest stamp, ${stamp.stopCount} stops completed.`}>
+      <Motion style={[styles.stampArea, { width: stampSize, height: stampSize }]} accessible accessibilityLabel={`Earned ${stamp.title} quest stamp, ${stamp.stopCount} stops completed.`}>
         <View style={styles.stampShadow} />
         <View style={styles.stampOuter}><View style={styles.stampInner}><View style={styles.stampLine}>
           <Text style={styles.stampTitle} numberOfLines={3}>{stamp.title.toUpperCase()}</Text>
@@ -102,7 +104,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 12, letterSpacing: 2, color: C.muted, marginBottom: 23 },
   title: { color: C.ink, fontSize: 33, fontWeight: '800', letterSpacing: -1, textAlign: 'center', marginBottom: 13 },
   description: { color: C.muted, fontSize: 15, lineHeight: 23, textAlign: 'center', maxWidth: 340 },
-  stampArea: { width: '85%', maxWidth: 270, aspectRatio: 1, flexShrink: 0, marginTop: 32, marginBottom: 36 },
+  stampArea: { flexShrink: 0, marginTop: 32, marginBottom: 36 },
   stampShadow: { position: 'absolute', left: 10, top: 10, width: '100%', height: '100%', borderRadius: 150, backgroundColor: C.lime },
   stampOuter: { flex: 1, backgroundColor: C.pale, borderWidth: 1.8, borderColor: C.ink, borderRadius: 150, padding: 24 },
   stampInner: { flex: 1, borderRadius: 150, borderWidth: 1.6, borderColor: C.ink, backgroundColor: C.paper, padding: 3 },

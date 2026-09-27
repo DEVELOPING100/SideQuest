@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import Motion from '../components/Motion';
+import PhotoMemoryPicker from '../components/PhotoMemoryPicker';
 import { checkIn, getAdventure } from '../api';
 import { getCurrentAdventure, setCurrentAdventure, toScreenStops } from '../data/adventureStore';
 
@@ -115,6 +116,7 @@ export default function CheckInScreen() {
         <View style={styles.cardShadow}><View style={styles.card}>
           <Text accessibilityRole="header" style={styles.stopTitle}>{stop.name}</Text>
           <Text style={styles.description}>{stop.description || 'Take a photo, share a laugh, or simply enjoy the moment.'}</Text>
+          <PhotoMemoryPicker key={`${adventure.adventureId}:${stop.stopId}`} adventureId={adventure.adventureId} stopId={stop.stopId} title={stop.name} />
           <View style={styles.buttonShadow}><Pressable accessibilityRole="button" accessibilityLabel={primaryLabel} disabled={busy} onPress={onPrimary} style={({ pressed }) => [styles.button, isDone && isLast && styles.doneButton, pressed && styles.pressed]}>
             {busy ? <ActivityIndicator color={C.ink} /> : <><Text style={styles.buttonText}>{primaryLabel}</Text><Feather name={isDone && isLast ? 'award' : 'arrow-right'} size={22} color={C.ink} /></>}
           </Pressable></View>
